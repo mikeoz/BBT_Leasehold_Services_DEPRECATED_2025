@@ -39,6 +39,7 @@ export type Database = {
       properties: {
         Row: {
           amenities: string | null
+          available_dates: Json
           bathrooms: number
           bedrooms: number
           created_at: string
@@ -46,6 +47,9 @@ export type Database = {
           house_rules: string | null
           id: string
           max_guests: number
+          minimal_stay_days: number
+          pricing_type: string
+          rental_rate: number
           status: string
           title: string
           updated_at: string
@@ -53,6 +57,7 @@ export type Database = {
         }
         Insert: {
           amenities?: string | null
+          available_dates?: Json
           bathrooms?: number
           bedrooms?: number
           created_at?: string
@@ -60,6 +65,9 @@ export type Database = {
           house_rules?: string | null
           id?: string
           max_guests?: number
+          minimal_stay_days?: number
+          pricing_type?: string
+          rental_rate?: number
           status?: string
           title: string
           updated_at?: string
@@ -67,6 +75,7 @@ export type Database = {
         }
         Update: {
           amenities?: string | null
+          available_dates?: Json
           bathrooms?: number
           bedrooms?: number
           created_at?: string
@@ -74,6 +83,9 @@ export type Database = {
           house_rules?: string | null
           id?: string
           max_guests?: number
+          minimal_stay_days?: number
+          pricing_type?: string
+          rental_rate?: number
           status?: string
           title?: string
           updated_at?: string

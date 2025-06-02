@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { 
   Form,
   FormControl,
@@ -55,7 +55,7 @@ const formSchema = z.object({
   }),
   amenities: z.array(z.string()).default([]),
   houseRules: z.string(),
-  images: z.any(),
+  images: z.any().optional(),
   minimalStayDays: z.string(),
   pricingType: z.enum(["daily", "weekly"]),
   rentalRate: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0, {
@@ -66,10 +66,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateListing = () => {
+const EditListing = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProperty, setIsLoadingProperty] = useState(true);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
 
@@ -90,6 +92,52 @@ const CreateListing = () => {
       availableDates: [],
     },
   });
+
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (!id || !user) return;
+
+      try {
+        const { data: property, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (property) {
+          const amenitiesArray = property.amenities ? property.amenities.split(", ") : [];
+          const availableDatesArray = property.available_dates ? JSON.parse(property.available_dates) : [];
+          
+          form.reset({
+            title: property.title,
+            description: property.description || "",
+            bedrooms: property.bedrooms.toString(),
+            bathrooms: property.bathrooms.toString(),
+            maxGuests: property.max_guests.toString(),
+            amenities: amenitiesArray,
+            houseRules: property.house_rules || "",
+            minimalStayDays: property.minimal_stay_days?.toString() || "1",
+            pricingType: property.pricing_type as "daily" | "weekly",
+            rentalRate: property.rental_rate?.toString() || "100",
+            availableDates: availableDatesArray,
+          });
+          
+          setAvailableDates(availableDatesArray);
+        }
+      } catch (error) {
+        console.error("Error fetching property:", error);
+        toast.error("Failed to load property details");
+        navigate("/dashboard");
+      } finally {
+        setIsLoadingProperty(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id, user, form, navigate]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -118,20 +166,19 @@ const CreateListing = () => {
   };
   
   const onSubmit = async (data: FormValues) => {
-    if (!user) {
-      toast.error("You must be logged in to create a listing");
+    if (!user || !id) {
+      toast.error("You must be logged in to edit a listing");
       return;
     }
 
     setIsLoading(true);
     
     try {
-      console.log("Creating property with data:", data);
+      console.log("Updating property with data:", data);
       
-      const { data: property, error: propertyError } = await supabase
+      const { error: propertyError } = await supabase
         .from('properties')
-        .insert({
-          user_id: user.id,
+        .update({
           title: data.title,
           description: data.description,
           bedrooms: parseInt(data.bedrooms),
@@ -143,26 +190,31 @@ const CreateListing = () => {
           pricing_type: data.pricingType,
           rental_rate: parseInt(data.rentalRate),
           available_dates: JSON.stringify(availableDates),
-          status: 'active'
+          updated_at: new Date().toISOString(),
         })
-        .select()
-        .single();
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (propertyError) {
-        console.error("Error creating property:", propertyError);
+        console.error("Error updating property:", propertyError);
         throw propertyError;
       }
 
-      console.log("Property created successfully:", property);
-
       if (data.images && data.images.length > 0) {
+        // Delete existing images first
+        await supabase
+          .from('property_images')
+          .delete()
+          .eq('property_id', id);
+
+        // Insert new images
         const imagePromises = Array.from(data.images).map((file: File, index: number) => {
           const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index}-4245e9b90334`;
           
           return supabase
             .from('property_images')
             .insert({
-              property_id: property.id,
+              property_id: id,
               image_url: placeholderUrl,
               display_order: index
             });
@@ -176,23 +228,35 @@ const CreateListing = () => {
         }
       }
       
-      toast.success("Property listing created successfully!");
+      toast.success("Property listing updated successfully!");
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error creating listing:", error);
-      toast.error("Failed to create listing. Please try again.");
+      console.error("Error updating listing:", error);
+      toast.error("Failed to update listing. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isLoadingProperty) {
+    return (
+      <MainLayout>
+        <div className="container max-w-3xl mx-auto px-4 py-8">
+          <div className="text-center">
+            <p>Loading property details...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="container max-w-3xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Create Property Listing</h1>
+          <h1 className="text-3xl font-bold mb-2">Edit Property Listing</h1>
           <p className="text-muted-foreground">
-            Add details about your property to create a new listing.
+            Update your property details and settings.
           </p>
         </div>
 
@@ -266,7 +330,7 @@ const CreateListing = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Max Guests</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select max guests" />
@@ -345,7 +409,7 @@ const CreateListing = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Minimal Stay (Days)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select minimal stay" />
@@ -394,7 +458,7 @@ const CreateListing = () => {
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-row space-x-6"
                       >
                         <div className="flex items-center space-x-2">
@@ -438,7 +502,7 @@ const CreateListing = () => {
                 name="images"
                 render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>Property Images</FormLabel>
+                    <FormLabel>Update Property Images</FormLabel>
                     <FormControl>
                       <Input
                         type="file"
@@ -449,7 +513,7 @@ const CreateListing = () => {
                       />
                     </FormControl>
                     <FormDescription>
-                      Upload 1-5 high-quality images of your property
+                      Upload 1-5 new images to replace existing ones (optional)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -458,7 +522,7 @@ const CreateListing = () => {
               
               {previewUrls.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium mb-2">Image Previews:</p>
+                  <p className="text-sm font-medium mb-2">New Image Previews:</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {previewUrls.map((url, index) => (
                       <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden">
@@ -504,7 +568,7 @@ const CreateListing = () => {
                   type="submit" 
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating..." : "Create Listing"}
+                  {isLoading ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </form>
@@ -515,4 +579,4 @@ const CreateListing = () => {
   );
 };
 
-export default CreateListing;
+export default EditListing;

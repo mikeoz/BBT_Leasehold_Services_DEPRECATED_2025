@@ -43,8 +43,8 @@ interface RentalRequest {
     title: string;
   };
   profiles: {
-    email: string;
-    full_name: string;
+    email: string | null;
+    full_name: string | null;
   } | null;
 }
 
@@ -105,7 +105,7 @@ const Dashboard = () => {
           properties!inner (
             title
           ),
-          profiles!rental_requests_renter_id_fkey (
+          profiles (
             email,
             full_name
           )

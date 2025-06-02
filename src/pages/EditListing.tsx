@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -109,7 +108,21 @@ const EditListing = () => {
 
         if (property) {
           const amenitiesArray = property.amenities ? property.amenities.split(", ") : [];
-          const availableDatesArray = property.available_dates ? JSON.parse(property.available_dates) : [];
+          
+          // Safely parse available_dates with proper type checking
+          let availableDatesArray: string[] = [];
+          if (property.available_dates) {
+            try {
+              if (typeof property.available_dates === 'string') {
+                availableDatesArray = JSON.parse(property.available_dates);
+              } else if (Array.isArray(property.available_dates)) {
+                availableDatesArray = property.available_dates;
+              }
+            } catch (e) {
+              console.warn('Failed to parse available_dates:', e);
+              availableDatesArray = [];
+            }
+          }
           
           form.reset({
             title: property.title,

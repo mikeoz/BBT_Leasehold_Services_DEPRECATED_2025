@@ -103,9 +103,10 @@ const Dashboard = () => {
           status,
           created_at,
           properties!inner (
-            title
+            title,
+            user_id
           ),
-          profiles (
+          profiles!rental_requests_renter_id_fkey (
             email,
             full_name
           )

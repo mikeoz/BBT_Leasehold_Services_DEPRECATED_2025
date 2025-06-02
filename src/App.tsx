@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Register from "./pages/Register";
@@ -32,9 +33,30 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create-listing" element={<CreateListing />} />
-            <Route path="/manage-availability/:id" element={<ManageAvailability />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/create-listing" 
+              element={
+                <ProtectedRoute>
+                  <CreateListing />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/manage-availability/:id" 
+              element={
+                <ProtectedRoute>
+                  <ManageAvailability />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

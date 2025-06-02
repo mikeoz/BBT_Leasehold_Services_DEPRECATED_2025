@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
@@ -18,11 +17,8 @@ const Index = () => {
               properties with family and friends while maintaining our community standards.
             </p>
             <div className="flex flex-wrap gap-4 animate-slideUp">
-              <Link to="/register">
-                <Button size="lg">Register as a Landlord</Button>
-              </Link>
               <Link to="/properties">
-                <Button variant="outline" size="lg">Browse Properties</Button>
+                <Button size="lg">Browse Properties</Button>
               </Link>
             </div>
           </div>
@@ -150,7 +146,7 @@ const Index = () => {
           Register today to list your property and ensure your rentals comply with our community standards.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Link to="/register">
+          <Link to="/auth">
             <Button variant="secondary" size="lg">Register Now</Button>
           </Link>
           <Link to="/about">

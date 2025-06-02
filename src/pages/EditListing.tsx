@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
-import { X, Star } from "lucide-react";
+import { X, Crown } from "lucide-react";
 
 const amenitiesList = [
   "WiFi", "Pool", "Hot Tub", "Fireplace", "Kitchen", "Washer/Dryer", 
@@ -214,8 +214,9 @@ const EditListing = () => {
     }
   };
 
-  const setCoverImage = (imageId: string) => {
+  const makeCoverImage = (imageId: string) => {
     setCoverImageId(imageId);
+    toast.success("Cover photo updated");
   };
 
   const handleAvailabilityChange = (dates: string[]) => {
@@ -581,7 +582,7 @@ const EditListing = () => {
                 <div>
                   <FormLabel className="text-base">Current Images</FormLabel>
                   <FormDescription className="mb-4">
-                    Click the star to set an image as the cover photo. Click X to delete.
+                    Click the crown to set an image as the cover photo. Click X to delete.
                   </FormDescription>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                     {existingImages.map((image) => (
@@ -597,9 +598,10 @@ const EditListing = () => {
                             size="sm"
                             variant={image.is_cover || coverImageId === image.id ? "default" : "outline"}
                             className="p-1 h-auto"
-                            onClick={() => setCoverImage(image.id)}
+                            onClick={() => makeCoverImage(image.id)}
+                            title="Make Cover Photo"
                           >
-                            <Star size={14} className={image.is_cover || coverImageId === image.id ? "fill-current" : ""} />
+                            <Crown size={14} className={image.is_cover || coverImageId === image.id ? "fill-current text-yellow-400" : ""} />
                           </Button>
                           <Button
                             type="button"
@@ -607,10 +609,18 @@ const EditListing = () => {
                             variant="destructive"
                             className="p-1 h-auto"
                             onClick={() => deleteExistingImage(image.id)}
+                            title="Delete Image"
                           >
                             <X size={14} />
                           </Button>
                         </div>
+                        {(image.is_cover || coverImageId === image.id) && (
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-xs bg-yellow-500 text-white p-1 rounded text-center font-medium">
+                              Cover Photo
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

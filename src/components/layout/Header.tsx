@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,9 +18,11 @@ const Header = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      navigate("/");
+      // The signOut function now handles the redirect, so we don't need to do it here
     } catch (error) {
       console.error("Error signing out:", error);
+      // Force reload even if there's an error
+      window.location.href = '/';
     }
   };
 

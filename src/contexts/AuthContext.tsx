@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { cleanupAuthState } from '@/utils/authUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -48,11 +49,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.error('Error during global sign out:', err);
+        // Continue even if this fails
+      }
+      
+      // Clear local state
       setUser(null);
       setSession(null);
+      
+      // Force page reload for a completely clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if there's an error, clean up and reload
+      cleanupAuthState();
+      setUser(null);
+      setSession(null);
+      window.location.href = '/';
     }
   };
 

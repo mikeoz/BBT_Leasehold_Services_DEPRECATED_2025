@@ -55,7 +55,6 @@ const formSchema = z.object({
   }),
   amenities: z.array(z.string()).default([]),
   houseRules: z.string(),
-  newImages: z.any().optional(),
   minimalStayDays: z.string(),
   pricingType: z.enum(["daily", "weekly"]),
   rentalRate: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0, {
@@ -79,6 +78,7 @@ const EditListing = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProperty, setIsLoadingProperty] = useState(true);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
@@ -95,7 +95,6 @@ const EditListing = () => {
       maxGuests: "2",
       amenities: [],
       houseRules: "",
-      newImages: undefined,
       minimalStayDays: "1",
       pricingType: "daily",
       rentalRate: "100",
@@ -108,6 +107,7 @@ const EditListing = () => {
       if (!id || !user) return;
 
       try {
+        console.log("Fetching property with ID:", id);
         const { data: property, error } = await supabase
           .from('properties')
           .select(`
@@ -123,9 +123,13 @@ const EditListing = () => {
           .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching property:", error);
+          throw error;
+        }
 
         if (property) {
+          console.log("Property data:", property);
           const amenitiesArray = property.amenities ? property.amenities.split(", ") : [];
           
           let availableDatesArray: string[] = [];
@@ -163,11 +167,13 @@ const EditListing = () => {
           
           // Set existing images
           const sortedImages = property.property_images?.sort((a: any, b: any) => a.display_order - b.display_order) || [];
+          console.log("Existing images:", sortedImages);
           setExistingImages(sortedImages);
           
           // Find cover image
           const coverImage = sortedImages.find((img: any) => img.is_cover);
           if (coverImage) {
+            console.log("Setting cover image:", coverImage.id);
             setCoverImageId(coverImage.id);
           }
         }
@@ -185,26 +191,45 @@ const EditListing = () => {
 
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      setNewImageFiles([]);
+      setNewImagePreviews([]);
+      return;
+    }
     
     if (files.length > 5) {
       toast.error("You can upload a maximum of 5 images at once");
       return;
     }
     
+    console.log("Selected files:", files);
+    const filesArray = Array.from(files);
+    setNewImageFiles(filesArray);
+    
     const newPreviews: string[] = [];
     
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    filesArray.forEach(file => {
       const url = URL.createObjectURL(file);
       newPreviews.push(url);
-    }
+    });
     
     setNewImagePreviews(newPreviews);
-    form.setValue("newImages", files);
+    console.log("New image previews created:", newPreviews.length);
+  };
+
+  const removeNewImage = (index: number) => {
+    const newFiles = newImageFiles.filter((_, i) => i !== index);
+    const newPreviews = newImagePreviews.filter((_, i) => i !== index);
+    
+    // Revoke the URL to free memory
+    URL.revokeObjectURL(newImagePreviews[index]);
+    
+    setNewImageFiles(newFiles);
+    setNewImagePreviews(newPreviews);
   };
 
   const deleteExistingImage = (imageId: string) => {
+    console.log("Deleting existing image:", imageId);
     setExistingImages(prev => prev.filter(img => img.id !== imageId));
     setImagesToDelete(prev => [...prev, imageId]);
     
@@ -215,6 +240,7 @@ const EditListing = () => {
   };
 
   const makeCoverImage = (imageId: string) => {
+    console.log("Setting cover image:", imageId);
     setCoverImageId(imageId);
     toast.success("Cover photo updated");
   };
@@ -260,35 +286,50 @@ const EditListing = () => {
         throw propertyError;
       }
 
-      // Delete marked images
+      // Delete marked images from database
       if (imagesToDelete.length > 0) {
-        await supabase
+        console.log("Deleting images:", imagesToDelete);
+        const { error: deleteError } = await supabase
           .from('property_images')
           .delete()
           .in('id', imagesToDelete);
+        
+        if (deleteError) {
+          console.error("Error deleting images:", deleteError);
+        }
       }
 
       // Update cover image status for existing images
       if (coverImageId && existingImages.some(img => img.id === coverImageId)) {
-        // First, remove cover status from all existing images
+        console.log("Updating cover image status for existing image:", coverImageId);
+        
+        // First, remove cover status from all existing images for this property
         await supabase
           .from('property_images')
           .update({ is_cover: false })
           .eq('property_id', id);
         
         // Then set the selected image as cover
-        await supabase
+        const { error: coverError } = await supabase
           .from('property_images')
           .update({ is_cover: true })
           .eq('id', coverImageId);
+          
+        if (coverError) {
+          console.error("Error setting cover image:", coverError);
+        }
       }
 
       // Add new images if any
-      if (data.newImages && data.newImages.length > 0) {
-        const currentImageCount = existingImages.length;
+      if (newImageFiles && newImageFiles.length > 0) {
+        console.log("Adding new images:", newImageFiles.length);
+        const currentImageCount = existingImages.length - imagesToDelete.length;
         
-        const imagePromises = Array.from(data.newImages).map((file: File, index: number) => {
+        const imagePromises = newImageFiles.map((file: File, index: number) => {
+          // Using placeholder URLs for now - in a real app you'd upload to storage
           const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index + currentImageCount}-4245e9b90334`;
+          
+          console.log(`Adding image ${index + 1}:`, placeholderUrl);
           
           return supabase
             .from('property_images')
@@ -305,6 +346,9 @@ const EditListing = () => {
         
         if (imageErrors.length > 0) {
           console.error("Some images failed to save:", imageErrors);
+          toast.error("Some images failed to upload");
+        } else {
+          console.log("All new images saved successfully");
         }
       }
       
@@ -628,28 +672,19 @@ const EditListing = () => {
               )}
               
               {/* Add New Images Section */}
-              <FormField
-                control={form.control}
-                name="newImages"
-                render={({ field: { value, onChange, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Add New Images</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleNewImageChange}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Upload up to 5 new images to add to your property
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div>
+                <FormLabel className="text-base">Add New Images</FormLabel>
+                <FormDescription className="mb-4">
+                  Upload up to 5 new images to add to your property
+                </FormDescription>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleNewImageChange}
+                  className="mb-4"
+                />
+              </div>
               
               {newImagePreviews.length > 0 && (
                 <div>
@@ -662,6 +697,18 @@ const EditListing = () => {
                           alt={`New image preview ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
+                        <div className="absolute top-2 right-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="p-1 h-auto"
+                            onClick={() => removeNewImage(index)}
+                            title="Remove Image"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
                         <div className="absolute bottom-2 left-2 right-2">
                           <p className="text-xs bg-black/70 text-white p-1 rounded text-center">
                             New Image {index + 1}

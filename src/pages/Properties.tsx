@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface Property {
   property_images: Array<{
     image_url: string;
     display_order: number;
+    is_cover: boolean;
   }>;
 }
 
@@ -45,7 +47,8 @@ const Properties = () => {
           max_guests,
           property_images (
             image_url,
-            display_order
+            display_order,
+            is_cover
           )
         `)
         .eq('status', 'active')
@@ -119,7 +122,7 @@ const Properties = () => {
             </h2>
             <p className="text-muted-foreground mb-6">
               {properties.length === 0 
-                ? "Click 'Create Sample Properties' above to add some demo data!" 
+                ? "Click 'Add/Edit Property' above to add a new property!" 
                 : "Try adjusting your search criteria"
               }
             </p>
@@ -127,8 +130,10 @@ const Properties = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProperties.map((property) => {
+              // Find cover photo first, then fallback to first image by display order
+              const coverImage = property.property_images?.find(img => img.is_cover);
               const sortedImages = property.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
-              const primaryImage = sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
+              const primaryImage = coverImage?.image_url || sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
               
               return (
                 <Card key={property.id} className="overflow-hidden card-shadow">

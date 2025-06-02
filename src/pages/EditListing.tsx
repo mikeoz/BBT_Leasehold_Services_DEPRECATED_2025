@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -74,6 +73,7 @@ const EditListing = () => {
   const [isLoadingProperty, setIsLoadingProperty] = useState(true);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState<number>(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -110,15 +110,13 @@ const EditListing = () => {
         if (property) {
           const amenitiesArray = property.amenities ? property.amenities.split(", ") : [];
           
-          // Safely parse available_dates with proper type checking
           let availableDatesArray: string[] = [];
           if (property.available_dates) {
             try {
               if (typeof property.available_dates === 'string') {
                 availableDatesArray = JSON.parse(property.available_dates);
               } else if (Array.isArray(property.available_dates)) {
-                // Type guard to ensure all elements are strings
-                const isStringArray = property.available_dates.every(item => typeof item === 'string');
+                const isStringArray = property.available_dates.every((item: any) => typeof item === 'string');
                 if (isStringArray) {
                   availableDatesArray = property.available_dates as string[];
                 }
@@ -175,6 +173,7 @@ const EditListing = () => {
     }
     
     setPreviewUrls(newPreviewUrls);
+    setCoverPhotoIndex(0); // Reset cover photo to first image when new images are selected
     form.setValue("images", files);
   };
 
@@ -234,7 +233,8 @@ const EditListing = () => {
             .insert({
               property_id: id,
               image_url: placeholderUrl,
-              display_order: index
+              display_order: index,
+              is_cover: index === coverPhotoIndex
             });
         });
 
@@ -549,9 +549,23 @@ const EditListing = () => {
                           alt={`Preview ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={coverPhotoIndex === index ? "default" : "outline"}
+                            className="w-full text-xs"
+                            onClick={() => setCoverPhotoIndex(index)}
+                          >
+                            {coverPhotoIndex === index ? "Cover Photo" : "Set as Cover"}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Click "Set as Cover" to choose which image appears on the Properties page
+                  </p>
                 </div>
               )}
 

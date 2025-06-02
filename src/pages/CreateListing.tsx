@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -72,6 +71,7 @@ const CreateListing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState<number>(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,6 +109,7 @@ const CreateListing = () => {
     }
     
     setPreviewUrls(newPreviewUrls);
+    setCoverPhotoIndex(0); // Reset cover photo to first image
     form.setValue("images", files);
   };
 
@@ -164,7 +165,8 @@ const CreateListing = () => {
             .insert({
               property_id: property.id,
               image_url: placeholderUrl,
-              display_order: index
+              display_order: index,
+              is_cover: index === coverPhotoIndex
             });
         });
 
@@ -467,9 +469,23 @@ const CreateListing = () => {
                           alt={`Preview ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={coverPhotoIndex === index ? "default" : "outline"}
+                            className="w-full text-xs"
+                            onClick={() => setCoverPhotoIndex(index)}
+                          >
+                            {coverPhotoIndex === index ? "Cover Photo" : "Set as Cover"}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Click "Set as Cover" to choose which image appears on the Properties page
+                  </p>
                 </div>
               )}
 

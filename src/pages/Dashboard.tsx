@@ -42,7 +42,7 @@ interface RentalRequest {
   properties: {
     title: string;
   };
-  profiles: {
+  renter_profiles: {
     email: string | null;
     full_name: string | null;
   } | null;
@@ -106,7 +106,7 @@ const Dashboard = () => {
             title,
             user_id
           ),
-          profiles!rental_requests_renter_id_fkey (
+          renter_profiles!rental_requests_renter_id_fkey (
             email,
             full_name
           )
@@ -253,7 +253,7 @@ const Dashboard = () => {
                           <div>Check-in: {new Date(request.check_in_date).toLocaleDateString()}</div>
                           <div>Check-out: {new Date(request.check_out_date).toLocaleDateString()}</div>
                           <div>Guests: {request.guests}</div>
-                          <div>Requester: {request.profiles?.email || 'Unknown'}</div>
+                          <div>Requester: {request.renter_profiles?.email || 'Unknown'}</div>
                         </div>
                         {request.message && (
                           <div className="text-sm">

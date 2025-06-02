@@ -14,6 +14,7 @@ import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import Dashboard from "./pages/Dashboard";
 import CreateListing from "./pages/CreateListing";
+import EditListing from "./pages/EditListing";
 import ManageAvailability from "./pages/ManageAvailability";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreateListing />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/edit-listing/:id" 
+              element={
+                <ProtectedRoute>
+                  <EditListing />
                 </ProtectedRoute>
               } 
             />

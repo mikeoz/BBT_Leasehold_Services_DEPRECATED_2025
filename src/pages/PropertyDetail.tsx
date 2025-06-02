@@ -6,64 +6,125 @@ import MainLayout from "@/components/layout/MainLayout";
 import RentalRequestForm from "@/components/RentalRequestForm";
 import AuthPrompt from "@/components/auth/AuthPrompt";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Property {
+  id: string;
+  title: string;
+  description: string;
+  bedrooms: number;
+  bathrooms: number;
+  max_guests: number;
+  amenities: string;
+  house_rules: string;
+  property_images: Array<{
+    image_url: string;
+    display_order: number;
+    is_cover: boolean;
+  }>;
+}
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  // Mock property data - would normally come from an API
-  const property = {
-    id,
-    title: id === "1" 
-      ? "Lakefront Cabin" 
-      : id === "2" 
-        ? "Mountain Retreat" 
-        : id === "3" 
-          ? "Forest Hideaway" 
-          : "Beachfront Condo",
-    description: id === "1"
-      ? "Beautiful 3 bedroom cabin with lake views and private dock. Perfect for a family getaway with spacious living area, fully equipped kitchen, and outdoor fire pit. Enjoy kayaking, swimming, and fishing from your private dock. The cabin features a master bedroom with en-suite bathroom, two guest bedrooms with shared bathroom, and a cozy fireplace in the living room."
-      : "Cozy 2 bedroom mountain home with stunning views of the surrounding landscape. The perfect retreat for those seeking peace and tranquility. Featuring a wraparound deck, floor-to-ceiling windows, and an open floor plan. Nearby hiking trails and ski areas make this an ideal location for outdoor enthusiasts.",
-    images: [
-      id === "1" 
-        ? "https://images.unsplash.com/photo-1483058712412-4245e9b90334"
-        : "https://images.unsplash.com/photo-1527576539890-dfa815648363",
-      "https://images.unsplash.com/photo-1472396961693-142e6e269027",
-      "https://images.unsplash.com/photo-1487958449943-2429e8be8625",
-    ],
-    bedrooms: id === "1" ? 3 : 2,
-    bathrooms: id === "1" ? 2 : 1,
-    maxGuests: id === "1" ? 6 : 4,
-    amenities: [
-      "WiFi",
-      "Kitchen",
-      "Free parking",
-      "Air conditioning",
-      "Heating",
-      "Washer",
-      "Dryer",
-      id === "1" ? "Lake access" : "Mountain views",
-      "Fireplace",
-    ],
-    rules: [
-      "No smoking",
-      "No parties",
-      "No pets",
-      "Check-in after 3:00 PM",
-      "Check-out before 11:00 AM",
-    ],
-  };
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const { data: property, isLoading, error } = useQuery({
+    queryKey: ['property', id],
+    queryFn: async () => {
+      if (!id) throw new Error('Property ID is required');
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          description,
+          bedrooms,
+          bathrooms,
+          max_guests,
+          amenities,
+          house_rules,
+          property_images (
+            image_url,
+            display_order,
+            is_cover
+          )
+        `)
+        .eq('id', id)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching property:', error);
+        throw error;
+      }
+
+      return data as Property;
+    },
+    enabled: !!id,
+  });
+
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
+    if (property?.property_images?.length) {
+      setCurrentImageIndex((prev) => (prev + 1) % property.property_images.length);
+    }
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length);
+    if (property?.property_images?.length) {
+      setCurrentImageIndex((prev) => (prev - 1 + property.property_images.length) % property.property_images.length);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <p>Loading property details...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <p className="text-red-600">Property not found or error loading property details.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => navigate("/properties")}
+            >
+              ← Back to Properties
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Sort images: cover photo first, then by display order
+  const sortedImages = property.property_images?.sort((a, b) => {
+    if (a.is_cover && !b.is_cover) return -1;
+    if (!a.is_cover && b.is_cover) return 1;
+    return a.display_order - b.display_order;
+  }) || [];
+
+  // Use sorted images or fallback to default image
+  const images = sortedImages.length > 0 
+    ? sortedImages.map(img => img.image_url)
+    : ["https://images.unsplash.com/photo-1483058712412-4245e9b90334"];
+
+  // Parse amenities and house rules from JSON strings
+  const amenitiesList = property.amenities ? JSON.parse(property.amenities) : [];
+  const rulesList = property.house_rules ? JSON.parse(property.house_rules) : [];
 
   return (
     <MainLayout>
@@ -84,61 +145,67 @@ const PropertyDetail = () => {
           <div>
             <div className="relative aspect-video bg-muted rounded-md overflow-hidden mb-4">
               <img 
-                src={property.images[currentImageIndex]} 
+                src={images[currentImageIndex]} 
                 alt={`${property.title} - Image ${currentImageIndex + 1}`} 
                 className="w-full h-full object-cover"
               />
               
-              <div className="absolute inset-0 flex items-center justify-between px-4">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="rounded-full bg-white/80 hover:bg-white"
-                  onClick={prevImage}
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="rounded-full bg-white/80 hover:bg-white"
-                  onClick={nextImage}
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Button>
-              </div>
+              {images.length > 1 && (
+                <div className="absolute inset-0 flex items-center justify-between px-4">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full bg-white/80 hover:bg-white"
+                    onClick={prevImage}
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full bg-white/80 hover:bg-white"
+                    onClick={nextImage}
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Button>
+                </div>
+              )}
               
-              <div className="absolute bottom-4 right-4 px-2 py-1 bg-black/70 text-white rounded text-sm">
-                {currentImageIndex + 1} / {property.images.length}
-              </div>
+              {images.length > 1 && (
+                <div className="absolute bottom-4 right-4 px-2 py-1 bg-black/70 text-white rounded text-sm">
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+              )}
             </div>
             
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              {property.images.map((image, index) => (
-                <div 
-                  key={index} 
-                  className={`w-20 h-20 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${
-                    index === currentImageIndex ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => setCurrentImageIndex(index)}
-                >
-                  <img 
-                    src={image} 
-                    alt={`${property.title} - Thumbnail ${index + 1}`} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+            {images.length > 1 && (
+              <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                {images.map((image, index) => (
+                  <div 
+                    key={index} 
+                    className={`w-20 h-20 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${
+                      index === currentImageIndex ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => setCurrentImageIndex(index)}
+                  >
+                    <img 
+                      src={image} 
+                      alt={`${property.title} - Thumbnail ${index + 1}`} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
             
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold mb-2">About This Property</h2>
-                <p className="text-muted-foreground">{property.description}</p>
+                <p className="text-muted-foreground">{property.description || "No description available"}</p>
               </div>
               
               <div className="flex flex-wrap gap-6">
@@ -152,37 +219,41 @@ const PropertyDetail = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Max Guests</h3>
-                  <p>{property.maxGuests}</p>
+                  <p>{property.max_guests}</p>
                 </div>
               </div>
               
-              <div>
-                <h3 className="font-semibold mb-2">Amenities</h3>
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  {property.amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>{amenity}</span>
-                    </div>
-                  ))}
+              {amenitiesList.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Amenities</h3>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {amenitiesList.map((amenity: string, index: number) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div>
-                <h3 className="font-semibold mb-2">House Rules</h3>
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  {property.rules.map((rule, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{rule}</span>
-                    </div>
-                  ))}
+              {rulesList.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">House Rules</h3>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {rulesList.map((rule: string, index: number) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{rule}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -190,9 +261,9 @@ const PropertyDetail = () => {
           <div className="sticky top-24">
             {user ? (
               <RentalRequestForm 
-                propertyId={id || "1"} 
+                propertyId={property.id} 
                 propertyTitle={property.title}
-                maxGuests={property.maxGuests}
+                maxGuests={property.max_guests}
               />
             ) : (
               <AuthPrompt 

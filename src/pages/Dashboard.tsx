@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RentalRequestActions from "@/components/RentalRequestActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +88,7 @@ const Dashboard = () => {
   });
 
   // Fetch rental requests for user's properties
-  const { data: rentalRequests = [], isLoading: requestsLoading } = useQuery({
+  const { data: rentalRequests = [], isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
     queryKey: ['rental-requests', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -253,19 +254,18 @@ const Dashboard = () => {
                           <div>Check-in: {new Date(request.check_in_date).toLocaleDateString()}</div>
                           <div>Check-out: {new Date(request.check_out_date).toLocaleDateString()}</div>
                           <div>Guests: {request.guests}</div>
-                          <div>Requester: {request.renter_profiles?.email || 'Unknown'}</div>
+                          <div>Requester: {request.renter_profiles?.full_name || request.renter_profiles?.email || 'Unknown'}</div>
                         </div>
                         {request.message && (
-                          <div className="text-sm">
+                          <div className="text-sm mb-2">
                             <strong>Message:</strong> {request.message}
                           </div>
                         )}
-                        {request.status === 'pending' && (
-                          <div className="flex gap-2 mt-3">
-                            <Button size="sm" variant="outline">Approve</Button>
-                            <Button size="sm" variant="outline">Reject</Button>
-                          </div>
-                        )}
+                        <RentalRequestActions
+                          requestId={request.id}
+                          currentStatus={request.status}
+                          onStatusUpdate={refetchRequests}
+                        />
                       </div>
                     ))}
                   </div>

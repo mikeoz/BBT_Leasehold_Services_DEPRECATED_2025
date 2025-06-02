@@ -87,7 +87,7 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
       // Ensure renter profile exists before creating rental request
       await ensureRenterProfile();
 
-      const { error } = await supabase
+      const { data: rentalRequest, error } = await supabase
         .from('rental_requests')
         .insert({
           property_id: propertyId,
@@ -97,14 +97,29 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
           guests: formData.guests,
           message: formData.message || null,
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating rental request:', error);
         throw error;
       }
 
-      toast.success("Rental request submitted successfully!");
+      // Send email notification to property owner
+      try {
+        await supabase.functions.invoke('send-rental-notifications', {
+          body: {
+            type: 'new_request',
+            rental_request_id: rentalRequest.id
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        // Don't fail the request if email fails, just log it
+      }
+
+      toast.success("Rental request submitted successfully! The property owner has been notified.");
       setFormData({
         checkInDate: "",
         checkOutDate: "",

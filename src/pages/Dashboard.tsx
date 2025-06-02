@@ -25,6 +25,7 @@ interface PropertyListing {
   property_images: Array<{
     image_url: string;
     display_order: number;
+    is_cover: boolean;
   }>;
   rental_requests: Array<{
     id: string;

@@ -1,93 +1,118 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User, LogOut } from "lucide-react";
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
-    <header className="border-b bg-white sticky top-0 z-40">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">CommunityRentals</span>
-        </Link>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="font-medium hover:text-primary transition-colors">
-            Home
+    <header className="bg-white shadow-sm border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <Link to="/" className="text-xl font-bold text-primary">
+            Community Rentals
           </Link>
-          <Link to="/about" className="font-medium hover:text-primary transition-colors">
-            About
-          </Link>
-          <Link to="/properties" className="font-medium hover:text-primary transition-colors">
-            Properties
-          </Link>
-          <Link to="/register" className="font-medium hover:text-primary transition-colors">
-            Register
-          </Link>
-          <Link to="/dashboard">
-            <Button>My Dashboard</Button>
-          </Link>
-        </nav>
+          
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/" className="text-gray-600 hover:text-primary transition-colors">
+              Home
+            </Link>
+            <Link to="/properties" className="text-gray-600 hover:text-primary transition-colors">
+              Properties
+            </Link>
+            <Link to="/about" className="text-gray-600 hover:text-primary transition-colors">
+              About
+            </Link>
+            {user && (
+              <Link to="/dashboard" className="text-gray-600 hover:text-primary transition-colors">
+                Dashboard
+              </Link>
+            )}
+          </nav>
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link 
-                  to="/" 
-                  className="px-4 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link 
-                  to="/about" 
-                  className="px-4 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  About
-                </Link>
-                <Link 
-                  to="/properties" 
-                  className="px-4 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Properties
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="px-4 py-2 hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Register
-                </Link>
-                <Link 
-                  to="/dashboard" 
-                  className="px-4 py-2 bg-primary text-white rounded-md text-center mt-2"
-                  onClick={() => setIsOpen(false)}
-                >
-                  My Dashboard
-                </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/auth">Get Started</Link>
+                </Button>
+              </div>
+            )}
+
+            {/* Mobile menu button */}
+            <button 
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t py-4">
+            <nav className="flex flex-col space-y-2">
+              <Link to="/" className="text-gray-600 hover:text-primary transition-colors py-2">
+                Home
+              </Link>
+              <Link to="/properties" className="text-gray-600 hover:text-primary transition-colors py-2">
+                Properties
+              </Link>
+              <Link to="/about" className="text-gray-600 hover:text-primary transition-colors py-2">
+                About
+              </Link>
+              {user && (
+                <Link to="/dashboard" className="text-gray-600 hover:text-primary transition-colors py-2">
+                  Dashboard
+                </Link>
+              )}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

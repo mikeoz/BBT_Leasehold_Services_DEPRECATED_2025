@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -116,7 +117,11 @@ const EditListing = () => {
               if (typeof property.available_dates === 'string') {
                 availableDatesArray = JSON.parse(property.available_dates);
               } else if (Array.isArray(property.available_dates)) {
-                availableDatesArray = property.available_dates;
+                // Type guard to ensure all elements are strings
+                const isStringArray = property.available_dates.every(item => typeof item === 'string');
+                if (isStringArray) {
+                  availableDatesArray = property.available_dates as string[];
+                }
               }
             } catch (e) {
               console.warn('Failed to parse available_dates:', e);

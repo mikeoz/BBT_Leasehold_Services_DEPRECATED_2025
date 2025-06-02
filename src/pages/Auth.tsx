@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Form,
   FormControl,
@@ -13,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import MainLayout from "@/components/layout/MainLayout";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,7 +20,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -33,6 +32,9 @@ const signupSchema = z.object({
   phone: z.string().min(10, "Please enter a valid phone number."),
   password: z.string().min(8, "Password must be at least 8 characters."),
   confirmPassword: z.string(),
+  role: z.enum(["property_owner", "guest"], {
+    required_error: "Please select your role.",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -44,7 +46,9 @@ type SignupValues = z.infer<typeof signupSchema>;
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [defaultTab, setDefaultTab] = useState("login");
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -62,8 +66,23 @@ const Auth = () => {
       phone: "",
       password: "",
       confirmPassword: "",
+      role: "guest",
     },
   });
+
+  // Handle URL parameters for role and tab preselection
+  useEffect(() => {
+    const role = searchParams.get("role");
+    const tab = searchParams.get("tab");
+    
+    if (tab === "signup") {
+      setDefaultTab("signup");
+    }
+    
+    if (role && (role === "property_owner" || role === "guest")) {
+      signupForm.setValue("role", role);
+    }
+  }, [searchParams, signupForm]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -109,6 +128,7 @@ const Auth = () => {
           data: {
             name: data.name,
             phone: data.phone,
+            role: data.role,
           }
         }
       });
@@ -154,7 +174,7 @@ const Auth = () => {
         </div>
 
         <Card>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -216,6 +236,37 @@ const Auth = () => {
               <CardContent>
                 <Form {...signupForm}>
                   <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
+                    <FormField
+                      control={signupForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>I am signing up as a:</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex flex-col space-y-1"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="property_owner" id="property_owner" />
+                                <label htmlFor="property_owner" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                  Property Owner
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="guest" id="guest" />
+                                <label htmlFor="guest" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                  Guest
+                                </label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <FormField
                       control={signupForm.control}
                       name="name"

@@ -4,10 +4,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import RentalRequestForm from "@/components/RentalRequestForm";
+import AuthPrompt from "@/components/auth/AuthPrompt";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Mock property data - would normally come from an API
   const property = {
@@ -183,13 +186,21 @@ const PropertyDetail = () => {
             </div>
           </div>
 
-          {/* Rental Request Form */}
+          {/* Rental Request Form or Auth Prompt */}
           <div className="sticky top-24">
-            <RentalRequestForm 
-              propertyId={id || "1"} 
-              propertyTitle={property.title}
-              maxGuests={property.maxGuests}
-            />
+            {user ? (
+              <RentalRequestForm 
+                propertyId={id || "1"} 
+                propertyTitle={property.title}
+                maxGuests={property.maxGuests}
+              />
+            ) : (
+              <AuthPrompt 
+                title="Request to Stay"
+                description="Sign in or create an account to request a booking for this property"
+                context="rental"
+              />
+            )}
           </div>
         </div>
       </div>

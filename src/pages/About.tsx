@@ -1,9 +1,20 @@
-
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const About = () => {
+  const [selectedRole, setSelectedRole] = useState<string>("guest");
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    // Navigate to auth page with role preselected via URL parameter
+    navigate(`/auth?role=${selectedRole}&tab=signup`);
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
@@ -94,9 +105,38 @@ const About = () => {
             </ul>
             
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/register">
-                <Button>Register as a Landlord</Button>
-              </Link>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>Get Started</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Join Our Community</DialogTitle>
+                    <DialogDescription>
+                      Choose how you'd like to participate in our rental platform
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <RadioGroup value={selectedRole} onValueChange={setSelectedRole}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="property_owner" id="dialog_property_owner" />
+                        <label htmlFor="dialog_property_owner" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Property Owner - I want to list my property for rent
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="guest" id="dialog_guest" />
+                        <label htmlFor="dialog_guest" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Guest - I want to find and book properties
+                        </label>
+                      </div>
+                    </RadioGroup>
+                    <Button onClick={handleGetStarted} className="w-full">
+                      Continue
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Link to="/properties">
                 <Button variant="outline">Browse Properties</Button>
               </Link>

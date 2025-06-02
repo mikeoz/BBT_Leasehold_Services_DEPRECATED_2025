@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import SeedDataButton from "@/components/admin/SeedDataButton";
 
 interface Property {
   id: string;
@@ -93,7 +93,10 @@ const Properties = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Available Properties</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold">Available Properties</h1>
+            <SeedDataButton />
+          </div>
           <p className="text-muted-foreground mb-6">
             Browse our community's exclusive private rental properties
           </p>
@@ -116,7 +119,7 @@ const Properties = () => {
             </h2>
             <p className="text-muted-foreground mb-6">
               {properties.length === 0 
-                ? "Be the first to list a property in our community!" 
+                ? "Click 'Create Sample Properties' above to add some demo data!" 
                 : "Try adjusting your search criteria"
               }
             </p>

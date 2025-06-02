@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import SeedDataButton from "@/components/admin/SeedDataButton";
 
 interface Property {
@@ -23,6 +24,7 @@ interface Property {
   bedrooms: number;
   bathrooms: number;
   max_guests: number;
+  user_id: string;
   property_images: Array<{
     image_url: string;
     display_order: number;
@@ -31,6 +33,7 @@ interface Property {
 }
 
 const Properties = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: properties = [], isLoading, error } = useQuery({
@@ -45,6 +48,7 @@ const Properties = () => {
           bedrooms,
           bathrooms,
           max_guests,
+          user_id,
           property_images (
             image_url,
             display_order,
@@ -122,7 +126,7 @@ const Properties = () => {
             </h2>
             <p className="text-muted-foreground mb-6">
               {properties.length === 0 
-                ? "Click 'Add/Edit Property' above to add a new property!" 
+                ? "Click 'Add Property' above to add a new property!" 
                 : "Try adjusting your search criteria"
               }
             </p>
@@ -134,6 +138,9 @@ const Properties = () => {
               const coverImage = property.property_images?.find(img => img.is_cover);
               const sortedImages = property.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
               const primaryImage = coverImage?.image_url || sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
+              
+              // Check if current user owns this property
+              const isOwner = user && property.user_id === user.id;
               
               return (
                 <Card key={property.id} className="overflow-hidden card-shadow">
@@ -169,10 +176,15 @@ const Properties = () => {
                     </div>
                   </CardContent>
                   
-                  <CardFooter>
-                    <Link to={`/properties/${property.id}`} className="w-full">
+                  <CardFooter className="flex gap-2">
+                    <Link to={`/properties/${property.id}`} className="flex-1">
                       <Button className="w-full">View Details</Button>
                     </Link>
+                    {isOwner && (
+                      <Link to={`/edit-listing/${property.id}`}>
+                        <Button variant="outline" size="sm">Edit</Button>
+                      </Link>
+                    )}
                   </CardFooter>
                 </Card>
               );

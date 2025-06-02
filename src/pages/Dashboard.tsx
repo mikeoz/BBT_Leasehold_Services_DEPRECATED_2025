@@ -67,7 +67,8 @@ const Dashboard = () => {
           status,
           property_images (
             image_url,
-            display_order
+            display_order,
+            is_cover
           ),
           rental_requests (
             id,
@@ -165,8 +166,10 @@ const Dashboard = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {listings.map((listing) => {
+                  // Find cover photo first, then fallback to first image by display order
+                  const coverImage = listing.property_images?.find(img => img.is_cover);
                   const sortedImages = listing.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
-                  const primaryImage = sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
+                  const primaryImage = coverImage?.image_url || sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
                   const pendingRequests = listing.rental_requests?.filter(req => req.status === 'pending').length || 0;
                   
                   return (

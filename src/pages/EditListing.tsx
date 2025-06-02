@@ -72,18 +72,24 @@ interface ExistingImage {
   is_cover: boolean;
 }
 
+interface NewImagePreview {
+  file: File;
+  preview: string;
+  isCover: boolean;
+}
+
 const EditListing = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProperty, setIsLoadingProperty] = useState(true);
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<NewImagePreview[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [coverImageId, setCoverImageId] = useState<string>("");
+  const [newCoverIndex, setNewCoverIndex] = useState<number>(-1);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -192,8 +198,7 @@ const EditListing = () => {
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) {
-      setNewImageFiles([]);
-      setNewImagePreviews([]);
+      setNewImages([]);
       return;
     }
     
@@ -204,28 +209,37 @@ const EditListing = () => {
     
     console.log("Selected files:", files);
     const filesArray = Array.from(files);
-    setNewImageFiles(filesArray);
     
-    const newPreviews: string[] = [];
+    const newImagePreviews: NewImagePreview[] = filesArray.map((file, index) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isCover: index === 0 && existingImages.length === 0 // First image is cover if no existing images
+    }));
     
-    filesArray.forEach(file => {
-      const url = URL.createObjectURL(file);
-      newPreviews.push(url);
-    });
+    setNewImages(newImagePreviews);
     
-    setNewImagePreviews(newPreviews);
-    console.log("New image previews created:", newPreviews.length);
+    // If first new image and no existing cover, set it as cover
+    if (newImagePreviews.length > 0 && !coverImageId && existingImages.length === 0) {
+      setNewCoverIndex(0);
+    }
+    
+    console.log("New image previews created:", newImagePreviews.length);
   };
 
   const removeNewImage = (index: number) => {
-    const newFiles = newImageFiles.filter((_, i) => i !== index);
-    const newPreviews = newImagePreviews.filter((_, i) => i !== index);
+    const updatedImages = newImages.filter((_, i) => i !== index);
     
     // Revoke the URL to free memory
-    URL.revokeObjectURL(newImagePreviews[index]);
+    URL.revokeObjectURL(newImages[index].preview);
     
-    setNewImageFiles(newFiles);
-    setNewImagePreviews(newPreviews);
+    setNewImages(updatedImages);
+    
+    // If removed image was cover, reset cover selection
+    if (newCoverIndex === index) {
+      setNewCoverIndex(-1);
+    } else if (newCoverIndex > index) {
+      setNewCoverIndex(newCoverIndex - 1);
+    }
   };
 
   const deleteExistingImage = (imageId: string) => {
@@ -242,7 +256,15 @@ const EditListing = () => {
   const makeCoverImage = (imageId: string) => {
     console.log("Setting cover image:", imageId);
     setCoverImageId(imageId);
+    setNewCoverIndex(-1); // Clear new image cover selection
     toast.success("Cover photo updated");
+  };
+
+  const makeNewImageCover = (index: number) => {
+    console.log("Setting new image as cover:", index);
+    setNewCoverIndex(index);
+    setCoverImageId(""); // Clear existing image cover selection
+    toast.success("Cover photo will be set when saved");
   };
 
   const handleAvailabilityChange = (dates: string[]) => {
@@ -299,6 +321,38 @@ const EditListing = () => {
         }
       }
 
+      // Handle new images
+      if (newImages.length > 0) {
+        console.log("Adding new images:", newImages.length);
+        const currentImageCount = existingImages.length - imagesToDelete.length;
+        
+        const imagePromises = newImages.map((imageData, index) => {
+          // Using placeholder URLs for now - in a real app you'd upload to storage
+          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index + currentImageCount}-4245e9b90334`;
+          
+          console.log(`Adding image ${index + 1}:`, placeholderUrl);
+          
+          return supabase
+            .from('property_images')
+            .insert({
+              property_id: id,
+              image_url: placeholderUrl,
+              display_order: currentImageCount + index,
+              is_cover: newCoverIndex === index // Set as cover if this is the selected new cover
+            });
+        });
+
+        const imageResults = await Promise.all(imagePromises);
+        const imageErrors = imageResults.filter(result => result.error);
+        
+        if (imageErrors.length > 0) {
+          console.error("Some images failed to save:", imageErrors);
+          toast.error("Some images failed to upload");
+        } else {
+          console.log("All new images saved successfully");
+        }
+      }
+
       // Update cover image status for existing images
       if (coverImageId && existingImages.some(img => img.id === coverImageId)) {
         console.log("Updating cover image status for existing image:", coverImageId);
@@ -317,38 +371,6 @@ const EditListing = () => {
           
         if (coverError) {
           console.error("Error setting cover image:", coverError);
-        }
-      }
-
-      // Add new images if any
-      if (newImageFiles && newImageFiles.length > 0) {
-        console.log("Adding new images:", newImageFiles.length);
-        const currentImageCount = existingImages.length - imagesToDelete.length;
-        
-        const imagePromises = newImageFiles.map((file: File, index: number) => {
-          // Using placeholder URLs for now - in a real app you'd upload to storage
-          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index + currentImageCount}-4245e9b90334`;
-          
-          console.log(`Adding image ${index + 1}:`, placeholderUrl);
-          
-          return supabase
-            .from('property_images')
-            .insert({
-              property_id: id,
-              image_url: placeholderUrl,
-              display_order: currentImageCount + index,
-              is_cover: false // New images are not cover by default
-            });
-        });
-
-        const imageResults = await Promise.all(imagePromises);
-        const imageErrors = imageResults.filter(result => result.error);
-        
-        if (imageErrors.length > 0) {
-          console.error("Some images failed to save:", imageErrors);
-          toast.error("Some images failed to upload");
-        } else {
-          console.log("All new images saved successfully");
         }
       }
       
@@ -640,12 +662,12 @@ const EditListing = () => {
                           <Button
                             type="button"
                             size="sm"
-                            variant={image.is_cover || coverImageId === image.id ? "default" : "outline"}
+                            variant={coverImageId === image.id ? "default" : "outline"}
                             className="p-1 h-auto"
                             onClick={() => makeCoverImage(image.id)}
                             title="Make Cover Photo"
                           >
-                            <Crown size={14} className={image.is_cover || coverImageId === image.id ? "fill-current text-yellow-400" : ""} />
+                            <Crown size={14} className={coverImageId === image.id ? "fill-current text-yellow-400" : ""} />
                           </Button>
                           <Button
                             type="button"
@@ -658,7 +680,7 @@ const EditListing = () => {
                             <X size={14} />
                           </Button>
                         </div>
-                        {(image.is_cover || coverImageId === image.id) && (
+                        {coverImageId === image.id && (
                           <div className="absolute bottom-2 left-2 right-2">
                             <p className="text-xs bg-yellow-500 text-white p-1 rounded text-center font-medium">
                               Cover Photo
@@ -686,18 +708,28 @@ const EditListing = () => {
                 />
               </div>
               
-              {newImagePreviews.length > 0 && (
+              {newImages.length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2">New Image Previews:</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {newImagePreviews.map((url, index) => (
+                    {newImages.map((imageData, index) => (
                       <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden">
                         <img 
-                          src={url} 
+                          src={imageData.preview} 
                           alt={`New image preview ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-2 left-2 right-2 flex justify-between">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={newCoverIndex === index ? "default" : "outline"}
+                            className="p-1 h-auto"
+                            onClick={() => makeNewImageCover(index)}
+                            title="Make Cover Photo"
+                          >
+                            <Crown size={14} className={newCoverIndex === index ? "fill-current text-yellow-400" : ""} />
+                          </Button>
                           <Button
                             type="button"
                             size="sm"
@@ -709,6 +741,13 @@ const EditListing = () => {
                             <X size={14} />
                           </Button>
                         </div>
+                        {newCoverIndex === index && (
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-xs bg-yellow-500 text-white p-1 rounded text-center font-medium">
+                              Cover Photo
+                            </p>
+                          </div>
+                        )}
                         <div className="absolute bottom-2 left-2 right-2">
                           <p className="text-xs bg-black/70 text-white p-1 rounded text-center">
                             New Image {index + 1}
@@ -718,7 +757,10 @@ const EditListing = () => {
                     ))}
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    New images will be added with the current cover photo selection maintained for existing images.
+                    {newCoverIndex >= 0 ? 
+                      `New Image ${newCoverIndex + 1} will be set as cover photo` : 
+                      "Click the crown on any image to set it as cover photo"
+                    }
                   </p>
                 </div>
               )}

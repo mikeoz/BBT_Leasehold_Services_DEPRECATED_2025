@@ -18,6 +18,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   title: z.string().min(5, {
@@ -26,14 +28,14 @@ const formSchema = z.object({
   description: z.string().min(20, {
     message: "Description must be at least 20 characters.",
   }),
-  bedrooms: z.string().refine((val) => !isNaN(parseInt(val, 10)), {
-    message: "Must be a valid number.",
+  bedrooms: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0, {
+    message: "Must be a valid number greater than 0.",
   }),
-  bathrooms: z.string().refine((val) => !isNaN(parseInt(val, 10)), {
-    message: "Must be a valid number.",
+  bathrooms: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+    message: "Must be a valid number greater than 0.",
   }),
-  maxGuests: z.string().refine((val) => !isNaN(parseInt(val, 10)), {
-    message: "Must be a valid number.",
+  maxGuests: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0, {
+    message: "Must be a valid number greater than 0.",
   }),
   amenities: z.string(),
   houseRules: z.string(),
@@ -44,6 +46,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CreateListing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
@@ -79,14 +82,65 @@ const CreateListing = () => {
   };
   
   const onSubmit = async (data: FormValues) => {
+    if (!user) {
+      toast.error("You must be logged in to create a listing");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // This would typically be an API call to create the listing
-      console.log("Listing data:", data);
+      console.log("Creating property with data:", data);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Insert the property
+      const { data: property, error: propertyError } = await supabase
+        .from('properties')
+        .insert({
+          user_id: user.id,
+          title: data.title,
+          description: data.description,
+          bedrooms: parseInt(data.bedrooms),
+          bathrooms: parseFloat(data.bathrooms),
+          max_guests: parseInt(data.maxGuests),
+          amenities: data.amenities || null,
+          house_rules: data.houseRules || null,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (propertyError) {
+        console.error("Error creating property:", propertyError);
+        throw propertyError;
+      }
+
+      console.log("Property created successfully:", property);
+
+      // For now, we'll use placeholder images since we don't have storage set up yet
+      // In a real implementation, you'd upload the images to Supabase Storage first
+      if (data.images && data.images.length > 0) {
+        const imagePromises = Array.from(data.images).map((file: File, index: number) => {
+          // For demo purposes, using a placeholder image URL
+          // In production, you'd upload to Supabase Storage and get the URL
+          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index}-4245e9b90334`;
+          
+          return supabase
+            .from('property_images')
+            .insert({
+              property_id: property.id,
+              image_url: placeholderUrl,
+              display_order: index
+            });
+        });
+
+        const imageResults = await Promise.all(imagePromises);
+        const imageErrors = imageResults.filter(result => result.error);
+        
+        if (imageErrors.length > 0) {
+          console.error("Some images failed to save:", imageErrors);
+          // Continue anyway since the property was created
+        }
+      }
       
       toast.success("Property listing created successfully!");
       navigate("/dashboard");
@@ -165,7 +219,7 @@ const CreateListing = () => {
                     <FormItem>
                       <FormLabel>Bathrooms</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" step="0.5" {...field} />
+                        <Input type="number" min="0.5" step="0.5" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

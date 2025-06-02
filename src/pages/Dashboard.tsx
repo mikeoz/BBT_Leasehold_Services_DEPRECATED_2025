@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -13,36 +12,116 @@ import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PropertyListing {
   id: string;
   title: string;
   description: string;
-  image: string;
-  status: "active" | "inactive";
-  pendingRequests: number;
+  status: string;
+  property_images: Array<{
+    image_url: string;
+    display_order: number;
+  }>;
+  rental_requests: Array<{
+    id: string;
+    status: string;
+  }>;
+}
+
+interface RentalRequest {
+  id: string;
+  check_in_date: string;
+  check_out_date: string;
+  guests: number;
+  message: string;
+  status: string;
+  created_at: string;
+  properties: {
+    title: string;
+  };
+  profiles: {
+    email: string;
+    full_name: string;
+  } | null;
 }
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [listings, setListings] = useState<PropertyListing[]>([
-    {
-      id: "1",
-      title: "Lakefront Cabin",
-      description: "Beautiful 3 bedroom cabin with lake views and private dock.",
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334",
-      status: "active",
-      pendingRequests: 2,
+
+  // Fetch user's properties
+  const { data: listings = [], isLoading: propertiesLoading } = useQuery({
+    queryKey: ['user-properties', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          property_images (
+            image_url,
+            display_order
+          ),
+          rental_requests (
+            id,
+            status
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching properties:', error);
+        throw error;
+      }
+
+      return data as PropertyListing[];
     },
-    {
-      id: "2",
-      title: "Mountain Retreat",
-      description: "Cozy 2 bedroom mountain home with stunning views.",
-      image: "https://images.unsplash.com/photo-1527576539890-dfa815648363",
-      status: "inactive",
-      pendingRequests: 0,
-    }
-  ]);
+    enabled: !!user,
+  });
+
+  // Fetch rental requests for user's properties
+  const { data: rentalRequests = [], isLoading: requestsLoading } = useQuery({
+    queryKey: ['rental-requests', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('rental_requests')
+        .select(`
+          id,
+          check_in_date,
+          check_out_date,
+          guests,
+          message,
+          status,
+          created_at,
+          properties!inner (
+            title,
+            user_id
+          ),
+          profiles (
+            email,
+            full_name
+          )
+        `)
+        .eq('properties.user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching rental requests:', error);
+        throw error;
+      }
+
+      return data as RentalRequest[];
+    },
+    enabled: !!user,
+  });
 
   return (
     <MainLayout>
@@ -67,51 +146,73 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="properties" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {listings.map((listing) => (
-                <Card key={listing.id} className="overflow-hidden card-shadow">
-                  <div className="aspect-video relative">
-                    <img 
-                      src={listing.image} 
-                      alt={listing.title} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full ${
-                      listing.status === "active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
-                    }`}>
-                      {listing.status === "active" ? "Active" : "Inactive"}
-                    </div>
-                  </div>
+            {propertiesLoading ? (
+              <div className="text-center py-8">
+                <p>Loading properties...</p>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="text-center py-12">
+                <h2 className="text-xl font-medium mb-2">No properties yet</h2>
+                <p className="text-muted-foreground mb-6">
+                  Create your first property listing to get started!
+                </p>
+                <Link to="/create-listing">
+                  <Button>Create Your First Listing</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listings.map((listing) => {
+                  const sortedImages = listing.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
+                  const primaryImage = sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
+                  const pendingRequests = listing.rental_requests?.filter(req => req.status === 'pending').length || 0;
                   
-                  <CardHeader>
-                    <CardTitle>{listing.title}</CardTitle>
-                    <CardDescription>{listing.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">Pending Requests:</span>
-                      {listing.pendingRequests > 0 ? (
-                        <span className="bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full text-xs font-medium">
-                          {listing.pendingRequests}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">None</span>
-                      )}
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter className="flex justify-between">
-                    <Link to={`/edit-listing/${listing.id}`}>
-                      <Button variant="outline" size="sm">Edit</Button>
-                    </Link>
-                    <Link to={`/manage-availability/${listing.id}`}>
-                      <Button variant="outline" size="sm">Manage Availability</Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+                  return (
+                    <Card key={listing.id} className="overflow-hidden card-shadow">
+                      <div className="aspect-video relative">
+                        <img 
+                          src={primaryImage} 
+                          alt={listing.title} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full ${
+                          listing.status === "active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+                        }`}>
+                          {listing.status === "active" ? "Active" : "Inactive"}
+                        </div>
+                      </div>
+                      
+                      <CardHeader>
+                        <CardTitle>{listing.title}</CardTitle>
+                        <CardDescription>{listing.description}</CardDescription>
+                      </CardHeader>
+                      
+                      <CardContent>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">Pending Requests:</span>
+                          {pendingRequests > 0 ? (
+                            <span className="bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full text-xs font-medium">
+                              {pendingRequests}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">None</span>
+                          )}
+                        </div>
+                      </CardContent>
+                      
+                      <CardFooter className="flex justify-between">
+                        <Link to={`/edit-listing/${listing.id}`}>
+                          <Button variant="outline" size="sm">Edit</Button>
+                        </Link>
+                        <Link to={`/manage-availability/${listing.id}`}>
+                          <Button variant="outline" size="sm">Manage Availability</Button>
+                        </Link>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="requests">
@@ -123,11 +224,51 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
-                  <div className="p-4 text-center text-muted-foreground">
-                    You have no pending rental requests at this time.
+                {requestsLoading ? (
+                  <div className="text-center py-4">
+                    <p>Loading requests...</p>
                   </div>
-                </div>
+                ) : rentalRequests.length === 0 ? (
+                  <div className="rounded-md border">
+                    <div className="p-4 text-center text-muted-foreground">
+                      You have no rental requests at this time.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {rentalRequests.map((request) => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium">{request.properties.title}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-2">
+                          <div>Check-in: {new Date(request.check_in_date).toLocaleDateString()}</div>
+                          <div>Check-out: {new Date(request.check_out_date).toLocaleDateString()}</div>
+                          <div>Guests: {request.guests}</div>
+                          <div>Requester: {request.profiles?.email || 'Unknown'}</div>
+                        </div>
+                        {request.message && (
+                          <div className="text-sm">
+                            <strong>Message:</strong> {request.message}
+                          </div>
+                        )}
+                        {request.status === 'pending' && (
+                          <div className="flex gap-2 mt-3">
+                            <Button size="sm" variant="outline">Approve</Button>
+                            <Button size="sm" variant="outline">Reject</Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

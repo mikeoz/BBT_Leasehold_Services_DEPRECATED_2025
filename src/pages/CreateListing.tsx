@@ -157,8 +157,12 @@ const CreateListing = () => {
       console.log("Property created successfully:", property);
 
       if (data.images && data.images.length > 0) {
+        console.log("Uploading images, cover photo index:", coverPhotoIndex);
+        
         const imagePromises = Array.from(data.images).map((file: File, index: number) => {
           const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index}-4245e9b90334`;
+          
+          console.log(`Adding image ${index + 1}:`, placeholderUrl, "Is cover:", index === coverPhotoIndex);
           
           return supabase
             .from('property_images')
@@ -175,6 +179,8 @@ const CreateListing = () => {
         
         if (imageErrors.length > 0) {
           console.error("Some images failed to save:", imageErrors);
+        } else {
+          console.log("All images saved successfully with cover photo set");
         }
       }
       

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PropertyListing {
   id: string;
@@ -23,6 +24,7 @@ interface PropertyListing {
 }
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [listings, setListings] = useState<PropertyListing[]>([
     {
       id: "1",
@@ -142,12 +144,12 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-medium mb-1">Personal Information</h3>
                   <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                    <div>Name:</div>
-                    <div>John Doe</div>
                     <div>Email:</div>
-                    <div>john.doe@example.com</div>
-                    <div>Phone:</div>
-                    <div>(555) 123-4567</div>
+                    <div>{user?.email || 'Not available'}</div>
+                    <div>User ID:</div>
+                    <div className="text-xs break-all">{user?.id || 'Not available'}</div>
+                    <div>Account Created:</div>
+                    <div>{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Not available'}</div>
                   </div>
                 </div>
                 

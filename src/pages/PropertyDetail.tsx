@@ -79,6 +79,24 @@ const PropertyDetail = () => {
     }
   };
 
+  // Helper function to safely parse amenities and house rules
+  const parseListData = (data: string): string[] => {
+    if (!data) return [];
+    
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (e) {
+      // If JSON parsing fails, treat as comma-separated string
+    }
+    
+    // Split by comma and clean up
+    return data.split(',').map(item => item.trim()).filter(item => item.length > 0);
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -122,9 +140,9 @@ const PropertyDetail = () => {
     ? sortedImages.map(img => img.image_url)
     : ["https://images.unsplash.com/photo-1483058712412-4245e9b90334"];
 
-  // Parse amenities and house rules from JSON strings
-  const amenitiesList = property.amenities ? JSON.parse(property.amenities) : [];
-  const rulesList = property.house_rules ? JSON.parse(property.house_rules) : [];
+  // Parse amenities and house rules safely
+  const amenitiesList = parseListData(property.amenities);
+  const rulesList = parseListData(property.house_rules);
 
   return (
     <MainLayout>

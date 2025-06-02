@@ -11,6 +11,7 @@ const SeedDataButton = () => {
   const handleSeedData = async () => {
     setIsSeeding(true);
     try {
+      console.log('Seeding button clicked...');
       const success = await seedProperties();
       if (success) {
         toast({
@@ -22,14 +23,15 @@ const SeedDataButton = () => {
       } else {
         toast({
           title: "Error",
-          description: "Failed to create sample data. Check console for details.",
+          description: "Failed to create sample data. Please sign in first or check console for details.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Seed data error:', error);
       toast({
         title: "Error",
-        description: "Failed to create sample data.",
+        description: "Failed to create sample data. Please sign in first.",
         variant: "destructive",
       });
     } finally {

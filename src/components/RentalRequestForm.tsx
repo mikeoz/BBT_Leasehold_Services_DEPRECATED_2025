@@ -25,6 +25,44 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
     message: ""
   });
 
+  const ensureRenterProfile = async () => {
+    if (!user) return false;
+
+    // Check if renter profile exists
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('renter_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking renter profile:', checkError);
+      throw checkError;
+    }
+
+    // If profile exists, we're good
+    if (existingProfile) {
+      return true;
+    }
+
+    // Create renter profile if it doesn't exist
+    const { error: createError } = await supabase
+      .from('renter_profiles')
+      .insert({
+        user_id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.name || null,
+        phone: user.user_metadata?.phone || null
+      });
+
+    if (createError) {
+      console.error('Error creating renter profile:', createError);
+      throw createError;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,6 +84,9 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
     setIsLoading(true);
 
     try {
+      // Ensure renter profile exists before creating rental request
+      await ensureRenterProfile();
+
       const { error } = await supabase
         .from('rental_requests')
         .insert({

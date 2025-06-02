@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
+import { X, Star } from "lucide-react";
 
 const amenitiesList = [
   "WiFi", "Pool", "Hot Tub", "Fireplace", "Kitchen", "Washer/Dryer", 
@@ -54,7 +55,7 @@ const formSchema = z.object({
   }),
   amenities: z.array(z.string()).default([]),
   houseRules: z.string(),
-  images: z.any().optional(),
+  newImages: z.any().optional(),
   minimalStayDays: z.string(),
   pricingType: z.enum(["daily", "weekly"]),
   rentalRate: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) > 0, {
@@ -65,15 +66,24 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface ExistingImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+  is_cover: boolean;
+}
+
 const EditListing = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProperty, setIsLoadingProperty] = useState(true);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [coverPhotoIndex, setCoverPhotoIndex] = useState<number>(0);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [coverImageId, setCoverImageId] = useState<string>("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -85,7 +95,7 @@ const EditListing = () => {
       maxGuests: "2",
       amenities: [],
       houseRules: "",
-      images: undefined,
+      newImages: undefined,
       minimalStayDays: "1",
       pricingType: "daily",
       rentalRate: "100",
@@ -100,7 +110,15 @@ const EditListing = () => {
       try {
         const { data: property, error } = await supabase
           .from('properties')
-          .select('*')
+          .select(`
+            *,
+            property_images (
+              id,
+              image_url,
+              display_order,
+              is_cover
+            )
+          `)
           .eq('id', id)
           .eq('user_id', user.id)
           .single();
@@ -142,6 +160,16 @@ const EditListing = () => {
           });
           
           setAvailableDates(availableDatesArray);
+          
+          // Set existing images
+          const sortedImages = property.property_images?.sort((a: any, b: any) => a.display_order - b.display_order) || [];
+          setExistingImages(sortedImages);
+          
+          // Find cover image
+          const coverImage = sortedImages.find((img: any) => img.is_cover);
+          if (coverImage) {
+            setCoverImageId(coverImage.id);
+          }
         }
       } catch (error) {
         console.error("Error fetching property:", error);
@@ -155,26 +183,39 @@ const EditListing = () => {
     fetchProperty();
   }, [id, user, form, navigate]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
     if (files.length > 5) {
-      toast.error("You can upload a maximum of 5 images");
+      toast.error("You can upload a maximum of 5 images at once");
       return;
     }
     
-    const newPreviewUrls: string[] = [];
+    const newPreviews: string[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const url = URL.createObjectURL(file);
-      newPreviewUrls.push(url);
+      newPreviews.push(url);
     }
     
-    setPreviewUrls(newPreviewUrls);
-    setCoverPhotoIndex(0); // Reset cover photo to first image when new images are selected
-    form.setValue("images", files);
+    setNewImagePreviews(newPreviews);
+    form.setValue("newImages", files);
+  };
+
+  const deleteExistingImage = (imageId: string) => {
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+    setImagesToDelete(prev => [...prev, imageId]);
+    
+    // If deleted image was cover, reset cover selection
+    if (coverImageId === imageId) {
+      setCoverImageId("");
+    }
+  };
+
+  const setCoverImage = (imageId: string) => {
+    setCoverImageId(imageId);
   };
 
   const handleAvailabilityChange = (dates: string[]) => {
@@ -193,6 +234,7 @@ const EditListing = () => {
     try {
       console.log("Updating property with data:", data);
       
+      // Update property details
       const { error: propertyError } = await supabase
         .from('properties')
         .update({
@@ -217,24 +259,43 @@ const EditListing = () => {
         throw propertyError;
       }
 
-      if (data.images && data.images.length > 0) {
-        // Delete existing images first
+      // Delete marked images
+      if (imagesToDelete.length > 0) {
         await supabase
           .from('property_images')
           .delete()
-          .eq('property_id', id);
+          .in('id', imagesToDelete);
+      }
 
-        // Insert new images
-        const imagePromises = Array.from(data.images).map((file: File, index: number) => {
-          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index}-4245e9b90334`;
+      // Update cover image status for existing images
+      if (coverImageId && existingImages.some(img => img.id === coverImageId)) {
+        // First, remove cover status from all existing images
+        await supabase
+          .from('property_images')
+          .update({ is_cover: false })
+          .eq('property_id', id);
+        
+        // Then set the selected image as cover
+        await supabase
+          .from('property_images')
+          .update({ is_cover: true })
+          .eq('id', coverImageId);
+      }
+
+      // Add new images if any
+      if (data.newImages && data.newImages.length > 0) {
+        const currentImageCount = existingImages.length;
+        
+        const imagePromises = Array.from(data.newImages).map((file: File, index: number) => {
+          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index + currentImageCount}-4245e9b90334`;
           
           return supabase
             .from('property_images')
             .insert({
               property_id: id,
               image_url: placeholderUrl,
-              display_order: index,
-              is_cover: index === coverPhotoIndex
+              display_order: currentImageCount + index,
+              is_cover: false // New images are not cover by default
             });
         });
 
@@ -514,57 +575,93 @@ const EditListing = () => {
                   </FormItem>
                 )}
               />
+
+              {/* Existing Images Section */}
+              {existingImages.length > 0 && (
+                <div>
+                  <FormLabel className="text-base">Current Images</FormLabel>
+                  <FormDescription className="mb-4">
+                    Click the star to set an image as the cover photo. Click X to delete.
+                  </FormDescription>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    {existingImages.map((image) => (
+                      <div key={image.id} className="relative aspect-video bg-muted rounded-md overflow-hidden">
+                        <img 
+                          src={image.image_url} 
+                          alt="Property image" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 left-2 right-2 flex justify-between">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={image.is_cover || coverImageId === image.id ? "default" : "outline"}
+                            className="p-1 h-auto"
+                            onClick={() => setCoverImage(image.id)}
+                          >
+                            <Star size={14} className={image.is_cover || coverImageId === image.id ? "fill-current" : ""} />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="p-1 h-auto"
+                            onClick={() => deleteExistingImage(image.id)}
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
+              {/* Add New Images Section */}
               <FormField
                 control={form.control}
-                name="images"
+                name="newImages"
                 render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>Update Property Images</FormLabel>
+                    <FormLabel>Add New Images</FormLabel>
                     <FormControl>
                       <Input
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={handleImageChange}
+                        onChange={handleNewImageChange}
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Upload 1-5 new images to replace existing ones (optional)
+                      Upload up to 5 new images to add to your property
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              {previewUrls.length > 0 && (
+              {newImagePreviews.length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2">New Image Previews:</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {previewUrls.map((url, index) => (
+                    {newImagePreviews.map((url, index) => (
                       <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden">
                         <img 
                           src={url} 
-                          alt={`Preview ${index + 1}`} 
+                          alt={`New image preview ${index + 1}`} 
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-2 left-2 right-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={coverPhotoIndex === index ? "default" : "outline"}
-                            className="w-full text-xs"
-                            onClick={() => setCoverPhotoIndex(index)}
-                          >
-                            {coverPhotoIndex === index ? "Cover Photo" : "Set as Cover"}
-                          </Button>
+                          <p className="text-xs bg-black/70 text-white p-1 rounded text-center">
+                            New Image {index + 1}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Click "Set as Cover" to choose which image appears on the Properties page
+                    New images will be added with the current cover photo selection maintained for existing images.
                   </p>
                 </div>
               )}

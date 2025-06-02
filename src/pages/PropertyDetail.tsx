@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import RentalRequestForm from "@/components/RentalRequestForm";
@@ -8,6 +8,7 @@ import AuthPrompt from "@/components/auth/AuthPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Edit } from "lucide-react";
 
 interface Property {
   id: string;
@@ -18,6 +19,7 @@ interface Property {
   max_guests: number;
   amenities: string;
   house_rules: string;
+  user_id: string;
   property_images: Array<{
     image_url: string;
     display_order: number;
@@ -47,6 +49,7 @@ const PropertyDetail = () => {
           max_guests,
           amenities,
           house_rules,
+          user_id,
           property_images (
             image_url,
             display_order,
@@ -96,6 +99,9 @@ const PropertyDetail = () => {
     // Split by comma and clean up
     return data.split(',').map(item => item.trim()).filter(item => item.length > 0);
   };
+
+  // Check if current user is the property owner
+  const isPropertyOwner = user && property && user.id === property.user_id;
 
   if (isLoading) {
     return (
@@ -147,15 +153,26 @@ const PropertyDetail = () => {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate("/properties")}
-          >
-            ← Back to Properties
-          </Button>
-          <h1 className="text-3xl font-bold">{property.title}</h1>
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-start justify-between">
+          <div className="flex flex-col md:flex-row gap-4 items-start">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate("/properties")}
+            >
+              ← Back to Properties
+            </Button>
+            <h1 className="text-3xl font-bold">{property.title}</h1>
+          </div>
+          
+          {isPropertyOwner && (
+            <Link to={`/edit-listing/${property.id}`}>
+              <Button className="flex items-center gap-2">
+                <Edit size={16} />
+                Edit Property
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -275,9 +292,23 @@ const PropertyDetail = () => {
             </div>
           </div>
 
-          {/* Rental Request Form or Auth Prompt */}
+          {/* Rental Request Form or Back Button for Property Owner */}
           <div className="sticky top-24">
-            {user ? (
+            {isPropertyOwner ? (
+              <div className="bg-card border rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Property Owner View</h3>
+                <p className="text-muted-foreground mb-6">
+                  You are viewing your own property. Use the "Edit Property" button above to make changes.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate("/properties")}
+                >
+                  ← Back to Properties
+                </Button>
+              </div>
+            ) : user ? (
               <RentalRequestForm 
                 propertyId={property.id} 
                 propertyTitle={property.title}

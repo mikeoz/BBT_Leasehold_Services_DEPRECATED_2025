@@ -12,7 +12,7 @@ const SeedDataButton = () => {
         className="flex items-center gap-2"
       >
         <Plus size={16} />
-        Add/Edit Property
+        Add Property
       </Button>
     </Link>
   );

@@ -1,55 +1,13 @@
 
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { 
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import MainLayout from "@/components/layout/MainLayout";
-import { format } from "date-fns";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { toast } from "sonner";
-
-const reservationSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  phone: z.string().min(10, {
-    message: "Please enter a valid phone number.",
-  }),
-  message: z.string().optional(),
-  checkInDate: z.date({
-    required_error: "Check-in date is required.",
-  }),
-  checkOutDate: z.date({
-    required_error: "Check-out date is required.",
-  }),
-}).refine((data) => {
-  return data.checkOutDate > data.checkInDate;
-}, {
-  message: "Check-out date must be after check-in date.",
-  path: ["checkOutDate"],
-});
-
-type ReservationFormValues = z.infer<typeof reservationSchema>;
+import RentalRequestForm from "@/components/RentalRequestForm";
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Mock property data - would normally come from an API
   const property = {
@@ -92,48 +50,6 @@ const PropertyDetail = () => {
       "Check-in after 3:00 PM",
       "Check-out before 11:00 AM",
     ],
-  };
-
-  const form = useForm<ReservationFormValues>({
-    resolver: zodResolver(reservationSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
-    },
-  });
-
-  // Mock available dates - would normally come from an API
-  const disabledDates = {
-    before: new Date(),
-    after: new Date(new Date().setMonth(new Date().getMonth() + 6)),
-  };
-
-  const onSubmit = async (data: ReservationFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      // This would normally send the data to an API
-      console.log("Reservation data:", data);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Reservation request submitted successfully!");
-      
-      // In a real application, this would trigger emails to:
-      // 1. The potential renter
-      // 2. The community rental secretary
-      // 3. The landlord (forwarded by the rental secretary)
-      
-      navigate("/properties");
-    } catch (error) {
-      console.error("Reservation error:", error);
-      toast.error("Failed to submit reservation. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -267,153 +183,13 @@ const PropertyDetail = () => {
             </div>
           </div>
 
-          {/* Reservation Form */}
-          <div>
-            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24">
-              <h2 className="text-2xl font-bold mb-6">Request a Reservation</h2>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john.doe@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input type="tel" placeholder="(555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="checkInDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Check-in Date</FormLabel>
-                          <div className="border rounded-md p-2">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={disabledDates}
-                              className={`p-0 pointer-events-auto ${!field.value ? 'border-red-500' : ''}`}
-                            />
-                          </div>
-                          {field.value && (
-                            <p className="text-sm mt-1">
-                              Selected: {format(field.value, "MMMM d, yyyy")}
-                            </p>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="checkOutDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Check-out Date</FormLabel>
-                          <div className="border rounded-md p-2">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={disabledDates}
-                              className={`p-0 pointer-events-auto ${!field.value ? 'border-red-500' : ''}`}
-                            />
-                          </div>
-                          {field.value && (
-                            <p className="text-sm mt-1">
-                              Selected: {format(field.value, "MMMM d, yyyy")}
-                            </p>
-                          )}
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Message (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Any special requests or questions..." 
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="bg-secondary/50 p-4 rounded-md text-sm space-y-2">
-                    <p className="font-medium">By submitting this request:</p>
-                    <ul className="space-y-1 text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <svg className="h-4 w-4 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        <span>You acknowledge that this is a members-only community for private residences.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <svg className="h-4 w-4 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        <span>You agree to abide by all community rules and regulations during your stay.</span>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit Reservation Request"}
-                  </Button>
-                </form>
-              </Form>
-            </div>
+          {/* Rental Request Form */}
+          <div className="sticky top-24">
+            <RentalRequestForm 
+              propertyId={id || "1"} 
+              propertyTitle={property.title}
+              maxGuests={property.maxGuests}
+            />
           </div>
         </div>
       </div>

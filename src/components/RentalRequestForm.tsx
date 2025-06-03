@@ -5,6 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,17 +18,27 @@ interface RentalRequestFormProps {
   propertyId: string;
   propertyTitle: string;
   maxGuests: number;
+  availableDates: string[];
 }
 
-const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalRequestFormProps) => {
+const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests, availableDates }: RentalRequestFormProps) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    checkInDate: "",
-    checkOutDate: "",
+    checkInDate: undefined as Date | undefined,
+    checkOutDate: undefined as Date | undefined,
     guests: 1,
     message: ""
   });
+
+  // Convert available dates to Date objects for easier comparison
+  const availableDateObjects = availableDates.map(date => parseISO(date));
+
+  const isDateAvailable = (date: Date) => {
+    return availableDateObjects.some(availableDate => 
+      format(availableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    );
+  };
 
   const ensureRenterProfile = async () => {
     if (!user) return false;
@@ -71,8 +86,18 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
       return;
     }
 
-    if (new Date(formData.checkInDate) >= new Date(formData.checkOutDate)) {
+    if (!formData.checkInDate || !formData.checkOutDate) {
+      toast.error("Please select both check-in and check-out dates");
+      return;
+    }
+
+    if (formData.checkInDate >= formData.checkOutDate) {
       toast.error("Check-out date must be after check-in date");
+      return;
+    }
+
+    if (!isDateAvailable(formData.checkInDate) || !isDateAvailable(formData.checkOutDate)) {
+      toast.error("Selected dates are not available for booking");
       return;
     }
 
@@ -92,8 +117,8 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
         .insert({
           property_id: propertyId,
           renter_id: user.id,
-          check_in_date: formData.checkInDate,
-          check_out_date: formData.checkOutDate,
+          check_in_date: format(formData.checkInDate, 'yyyy-MM-dd'),
+          check_out_date: format(formData.checkOutDate, 'yyyy-MM-dd'),
           guests: formData.guests,
           message: formData.message || null,
           status: 'pending'
@@ -121,8 +146,8 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
 
       toast.success("Rental request submitted successfully! The property owner has been notified.");
       setFormData({
-        checkInDate: "",
-        checkOutDate: "",
+        checkInDate: undefined,
+        checkOutDate: undefined,
         guests: 1,
         message: ""
       });
@@ -165,25 +190,84 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="checkIn">Check-in Date</Label>
-              <Input
-                id="checkIn"
-                type="date"
-                value={formData.checkInDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, checkInDate: e.target.value }))}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.checkInDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.checkInDate ? format(formData.checkInDate, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.checkInDate}
+                    onSelect={(date) => setFormData(prev => ({ ...prev, checkInDate: date }))}
+                    disabled={(date) => {
+                      const isPastDate = date < new Date();
+                      const isUnavailable = !isDateAvailable(date);
+                      return isPastDate || isUnavailable;
+                    }}
+                    modifiers={{
+                      available: isDateAvailable,
+                    }}
+                    modifiersStyles={{
+                      available: {
+                        backgroundColor: 'hsl(var(--primary) / 0.2)',
+                        border: '1px solid hsl(var(--primary))',
+                      },
+                    }}
+                    className="pointer-events-auto"
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label htmlFor="checkOut">Check-out Date</Label>
-              <Input
-                id="checkOut"
-                type="date"
-                value={formData.checkOutDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, checkOutDate: e.target.value }))}
-                min={formData.checkInDate || new Date().toISOString().split('T')[0]}
-                required
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.checkOutDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.checkOutDate ? format(formData.checkOutDate, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.checkOutDate}
+                    onSelect={(date) => setFormData(prev => ({ ...prev, checkOutDate: date }))}
+                    disabled={(date) => {
+                      const isPastDate = date < new Date();
+                      const isBeforeCheckIn = formData.checkInDate && date <= formData.checkInDate;
+                      const isUnavailable = !isDateAvailable(date);
+                      return isPastDate || isBeforeCheckIn || isUnavailable;
+                    }}
+                    modifiers={{
+                      available: isDateAvailable,
+                    }}
+                    modifiersStyles={{
+                      available: {
+                        backgroundColor: 'hsl(var(--primary) / 0.2)',
+                        border: '1px solid hsl(var(--primary))',
+                      },
+                    }}
+                    className="pointer-events-auto"
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           
@@ -213,6 +297,14 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests }: RentalReque
               className="min-h-[80px]"
             />
           </div>
+
+          {availableDates.length > 0 && (
+            <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+              <p className="font-medium mb-1">Booking Information:</p>
+              <p>• Available dates are highlighted in the calendar</p>
+              <p>• Only available dates can be selected for booking</p>
+            </div>
+          )}
           
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Submitting..." : "Submit Request"}

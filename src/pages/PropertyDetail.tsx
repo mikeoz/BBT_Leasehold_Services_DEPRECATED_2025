@@ -20,6 +20,7 @@ interface Property {
   amenities: string;
   house_rules: string;
   user_id: string;
+  available_dates: string[];
   property_images: Array<{
     image_url: string;
     display_order: number;
@@ -49,6 +50,7 @@ const PropertyDetail = () => {
           amenities,
           house_rules,
           user_id,
+          available_dates,
           property_images (
             image_url,
             display_order,
@@ -64,7 +66,7 @@ const PropertyDetail = () => {
         throw error;
       }
 
-      return data as Property;
+      return data as Property & { available_dates: string[] };
     },
     enabled: !!id,
   });
@@ -234,6 +236,7 @@ const PropertyDetail = () => {
                 propertyId={property.id} 
                 propertyTitle={property.title}
                 maxGuests={property.max_guests}
+                availableDates={property.available_dates || []}
               />
             ) : (
               <AuthPrompt 

@@ -1,3 +1,4 @@
+
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -31,42 +32,43 @@ const About = () => {
           
           <div className="prose prose-lg max-w-none">
             <p>
-              Our exclusive community consists of 200 homes nestled in a beautiful natural setting.
-              With a focus on privacy, harmony, and shared values, we have created a special place 
-              for homeowners and their guests to enjoy.
+              We are a church committed to building up our members and equipping them to be ministers 
+              and mature men and women in Christ (Ephesians 4:12-14); and reaching out to unbelievers with 
+              the Gospel of Jesus Christ (Matthew 28:19). The church traces its beginnings to the Swedish 
+              Baptist Churches of Chicago that first commissioned the search for the property now known as 
+              Bethany Beach and to the faithful followers of Christ who have consistently worshiped as a 
+              community here for more than a century.
             </p>
             
-            <h2>Our Community Rental Platform</h2>
+            <p className="ml-8">
+              The church conducts its worship, youth and other ministries only during the summer season 
+              each year for members, their guests and friends. The organized structure of the church is non-denominational, 
+              but designed to reflect our dependence on the Lord of the church, Jesus Christ.
+            </p>
+            
+            <h2>Our Rental Platform</h2>
             <p>
-              We've created this platform to address the evolving needs of our homeowners who wish to
-              share their properties with family and friends. Unlike public platforms like Airbnb or VRBO,
-              our system emphasizes compliance with our community's charter and regulations.
+              We've created this platform to address the evolving needs of our homeowners who wish to 
+              share their properties with family, friends and other like-minded guests who wish to visit our 
+              community of believers.
             </p>
             <p>
-              This platform ensures that all rentals remain consistent with our community's values while
-              providing homeowners with a straightforward way to manage their property's availability
+              <strong>Please note that Leaseholds and rental opportunities are only offered in 
+              compliance with the Fair Housing Act (42 U.S. Code §3607), consistent 
+              with the rules and regulations of as part of the Bethany Beach 
+              Tabernacle, a private religious organization.</strong>
+            </p>
+            <p>
+              Your use of this platform ensures that all rentals remain consistent with our community's values 
+              while providing homeowners with a straightforward way to manage their property's availability 
               and handle rental requests.
             </p>
-            
-            <h2>Key Benefits</h2>
-            <ul>
-              <li>
-                <strong>Community Compliance</strong> - Our platform ensures all rentals adhere to community
-                guidelines and regulations.
-              </li>
-              <li>
-                <strong>Streamlined Process</strong> - Automated workflows keep all parties informed and
-                ensure proper documentation.
-              </li>
-              <li>
-                <strong>Enhanced Privacy</strong> - Unlike public rental platforms, ours is exclusive to
-                our community members.
-              </li>
-              <li>
-                <strong>Rental Secretary Support</strong> - Our community rental secretary helps facilitate
-                communications between landlords and renters.
-              </li>
-            </ul>
+            <p>
+              If you have questions, please use the contact form on our main website: 
+              <a href="https://www.bethanybeachtabernacle.org/contact" className="text-primary hover:underline ml-1" target="_blank" rel="noopener noreferrer">
+                https://www.bethanybeachtabernacle.org/contact
+              </a>
+            </p>
             
             <h2>How It Works</h2>
             <ol>
@@ -87,22 +89,7 @@ const About = () => {
                   <li>The landlord (via the rental secretary)</li>
                 </ul>
               </li>
-              <li>
-                All communications emphasize the importance of adhering to community rules and regulations.
-              </li>
             </ol>
-            
-            <h2>Our Community Values</h2>
-            <p>
-              We believe in maintaining a peaceful, respectful environment for all residents and guests.
-              Our community charter emphasizes:
-            </p>
-            <ul>
-              <li>Respect for privacy and quiet enjoyment</li>
-              <li>Environmental stewardship</li>
-              <li>Shared responsibility for community spaces</li>
-              <li>Support for a vibrant community life</li>
-            </ul>
             
             <div className="mt-8 flex flex-wrap gap-4">
               <Dialog>

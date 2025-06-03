@@ -1,4 +1,3 @@
-
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -20,7 +19,7 @@ const About = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-6">About Our Community</h1>
+          <h1 className="text-4xl font-bold mb-6">About The Bethany Beach Tabernacle</h1>
           
           <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-8">
             <img 

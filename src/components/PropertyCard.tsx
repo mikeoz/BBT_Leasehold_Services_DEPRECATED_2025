@@ -9,6 +9,20 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 
 interface PropertyImage {
   image_url: string;
@@ -33,6 +47,7 @@ interface PropertyCardProps {
   showEditButton?: boolean;
   showManageAvailability?: boolean;
   showPendingRequests?: boolean;
+  onDelete?: () => void;
 }
 
 const PropertyCard = ({ 
@@ -40,8 +55,11 @@ const PropertyCard = ({
   currentUserId, 
   showEditButton = false, 
   showManageAvailability = false,
-  showPendingRequests = false 
+  showPendingRequests = false,
+  onDelete
 }: PropertyCardProps) => {
+  const { toast } = useToast();
+  
   // Find cover photo first, then fallback to first image by display order
   const coverImage = property.property_images?.find(img => img.is_cover);
   const sortedImages = property.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
@@ -50,6 +68,42 @@ const PropertyCard = ({
   // Check if current user owns this property
   const isOwner = currentUserId && property.user_id === currentUserId;
   const pendingRequests = property.rental_requests?.filter(req => req.status === 'pending').length || 0;
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ status: 'deleted' })
+        .eq('id', property.id)
+        .eq('user_id', currentUserId); // Extra security check
+
+      if (error) {
+        console.error('Error deleting property:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete property. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Property has been deleted successfully.",
+      });
+
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete property. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card className="overflow-hidden card-shadow">
@@ -118,6 +172,29 @@ const PropertyCard = ({
           <Link to={`/manage-availability/${property.id}`}>
             <Button variant="outline" size="sm">Manage Availability</Button>
           </Link>
+        )}
+        {isOwner && onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </CardFooter>
     </Card>

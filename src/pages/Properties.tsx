@@ -29,7 +29,7 @@ const Properties = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: properties = [], isLoading, error } = useQuery({
+  const { data: properties = [], isLoading, error, refetch } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -132,6 +132,7 @@ const Properties = () => {
                 property={property}
                 currentUserId={user?.id}
                 showEditButton={true}
+                onDelete={refetch}
               />
             ))}
           </div>

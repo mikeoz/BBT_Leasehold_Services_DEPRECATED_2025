@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
 import { X, Crown } from "lucide-react";
+import { uploadPropertyImage, deletePropertyImage } from "@/utils/imageUpload";
 
 const amenitiesList = [
   "WiFi", "Pool", "Hot Tub", "Fireplace", "Kitchen", "Washer/Dryer", 
@@ -242,8 +243,21 @@ const EditListing = () => {
     }
   };
 
-  const deleteExistingImage = (imageId: string) => {
+  const deleteExistingImage = async (imageId: string) => {
     console.log("Deleting existing image:", imageId);
+    
+    // Find the image to get its path for storage deletion
+    const imageToDelete = existingImages.find(img => img.id === imageId);
+    if (imageToDelete) {
+      // Extract storage path from URL
+      const url = new URL(imageToDelete.image_url);
+      const pathParts = url.pathname.split('/');
+      const storagePath = pathParts.slice(-2).join('/'); // Get userId/filename
+      
+      // Delete from storage
+      await deletePropertyImage(storagePath);
+    }
+    
     setExistingImages(prev => prev.filter(img => img.id !== imageId));
     setImagesToDelete(prev => [...prev, imageId]);
     
@@ -323,33 +337,37 @@ const EditListing = () => {
 
       // Handle new images
       if (newImages.length > 0) {
-        console.log("Adding new images:", newImages.length);
+        console.log("Uploading new images:", newImages.length);
         const currentImageCount = existingImages.length - imagesToDelete.length;
         
-        const imagePromises = newImages.map((imageData, index) => {
-          // Using placeholder URLs for now - in a real app you'd upload to storage
-          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index + currentImageCount}-4245e9b90334`;
+        const uploadPromises = newImages.map(async (imageData, index) => {
+          const uploadResult = await uploadPropertyImage(imageData.file, user.id, id, currentImageCount + index);
           
-          console.log(`Adding image ${index + 1}:`, placeholderUrl);
+          if (uploadResult.error) {
+            console.error(`Failed to upload image ${index + 1}:`, uploadResult.error);
+            return null;
+          }
+
+          console.log(`Adding image ${index + 1} to database:`, uploadResult.url);
           
           return supabase
             .from('property_images')
             .insert({
               property_id: id,
-              image_url: placeholderUrl,
+              image_url: uploadResult.url,
               display_order: currentImageCount + index,
               is_cover: newCoverIndex === index // Set as cover if this is the selected new cover
             });
         });
 
-        const imageResults = await Promise.all(imagePromises);
-        const imageErrors = imageResults.filter(result => result.error);
+        const imageResults = await Promise.all(uploadPromises);
+        const imageErrors = imageResults.filter(result => result === null || result?.error);
         
         if (imageErrors.length > 0) {
           console.error("Some images failed to save:", imageErrors);
-          toast.error("Some images failed to upload");
+          toast.error(`${imageErrors.length} image(s) failed to upload`);
         } else {
-          console.log("All new images saved successfully");
+          console.log("All new images uploaded and saved successfully");
         }
       }
 
@@ -697,7 +715,7 @@ const EditListing = () => {
               <div>
                 <FormLabel className="text-base">Add New Images</FormLabel>
                 <FormDescription className="mb-4">
-                  Upload up to 5 new images to add to your property
+                  Upload up to 5 new images to add to your property. Supported formats: JPEG, PNG, WebP, GIF (max 5MB each)
                 </FormDescription>
                 <Input
                   type="file"

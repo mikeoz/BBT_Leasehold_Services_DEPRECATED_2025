@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
+import { uploadPropertyImage } from "@/utils/imageUpload";
 
 const amenitiesList = [
   "WiFi", "Pool", "Hot Tub", "Fireplace", "Kitchen", "Washer/Dryer", 
@@ -159,28 +160,34 @@ const CreateListing = () => {
       if (data.images && data.images.length > 0) {
         console.log("Uploading images, cover photo index:", coverPhotoIndex);
         
-        const imagePromises = Array.from(data.images).map((file: File, index: number) => {
-          const placeholderUrl = `https://images.unsplash.com/photo-${1483058712412 + index}-4245e9b90334`;
+        const uploadPromises = Array.from(data.images).map(async (file: File, index: number) => {
+          const uploadResult = await uploadPropertyImage(file, user.id, property.id, index);
           
-          console.log(`Adding image ${index + 1}:`, placeholderUrl, "Is cover:", index === coverPhotoIndex);
+          if (uploadResult.error) {
+            console.error(`Failed to upload image ${index + 1}:`, uploadResult.error);
+            return null;
+          }
+
+          console.log(`Adding image ${index + 1} to database:`, uploadResult.url, "Is cover:", index === coverPhotoIndex);
           
           return supabase
             .from('property_images')
             .insert({
               property_id: property.id,
-              image_url: placeholderUrl,
+              image_url: uploadResult.url,
               display_order: index,
               is_cover: index === coverPhotoIndex
             });
         });
 
-        const imageResults = await Promise.all(imagePromises);
-        const imageErrors = imageResults.filter(result => result.error);
+        const imageResults = await Promise.all(uploadPromises);
+        const imageErrors = imageResults.filter(result => result === null || result?.error);
         
         if (imageErrors.length > 0) {
           console.error("Some images failed to save:", imageErrors);
+          toast.error(`${imageErrors.length} image(s) failed to upload`);
         } else {
-          console.log("All images saved successfully with cover photo set");
+          console.log("All images uploaded and saved successfully with cover photo set");
         }
       }
       
@@ -457,7 +464,7 @@ const CreateListing = () => {
                       />
                     </FormControl>
                     <FormDescription>
-                      Upload 1-5 high-quality images of your property
+                      Upload 1-5 high-quality images of your property. Supported formats: JPEG, PNG, WebP, GIF (max 5MB each)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

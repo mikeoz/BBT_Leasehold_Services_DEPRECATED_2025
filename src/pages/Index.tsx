@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
@@ -11,11 +10,10 @@ const Index = () => {
         <div className="container mx-auto px-4 py-20 md:py-32">
           <div className="max-w-3xl">
             <h1 className="heading-1 mb-6 animate-fadeIn">
-              Community-Exclusive Private Rental Platform
+              Welcome To Our Christian Community
             </h1>
             <p className="text-lg md:text-xl mb-8 text-muted-foreground animate-slideUp">
-              A private platform for our 200 community homeowners to share their 
-              properties with family and friends while maintaining our community standards.
+              A Christian community providing an opportunity to better live out the command that we love others as we do ourselves.
             </p>
             <div className="flex flex-wrap gap-4 animate-slideUp">
               <Link to="/properties">

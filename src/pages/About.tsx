@@ -30,7 +30,7 @@ const About = () => {
             />
           </div>
           
-          <div className="prose prose-lg max-w-none">
+          <div className="prose prose-lg max-w-none space-y-6">
             <p>
               We are a church committed to building up our members and equipping them to be ministers 
               and mature men and women in Christ (Ephesians 4:12-14); and reaching out to unbelievers with 
@@ -40,24 +40,26 @@ const About = () => {
               community here for more than a century.
             </p>
             
-            <p className="ml-8">
+            <p>
               The church conducts its worship, youth and other ministries only during the summer season 
               each year for members, their guests and friends. The organized structure of the church is non-denominational, 
               but designed to reflect our dependence on the Lord of the church, Jesus Christ.
             </p>
             
-            <h2>Our Rental Platform</h2>
+            <h2 className="font-bold text-2xl">Our Rental Platform</h2>
             <p>
               We've created this platform to address the evolving needs of our homeowners who wish to 
               share their properties with family, friends and other like-minded guests who wish to visit our 
               community of believers.
             </p>
-            <p>
-              <strong>Please note that Leaseholds and rental opportunities are only offered in 
-              compliance with the Fair Housing Act (42 U.S. Code §3607), consistent 
-              with the rules and regulations of as part of the Bethany Beach 
-              Tabernacle, a private religious organization.</strong>
-            </p>
+            <div className="mx-8">
+              <p className="font-bold">
+                Please note that Leaseholds and rental opportunities are only offered in 
+                compliance with the Fair Housing Act (42 U.S. Code §3607), consistent 
+                with the rules and regulations of as part of the Bethany Beach 
+                Tabernacle, a private religious organization.
+              </p>
+            </div>
             <p>
               Your use of this platform ensures that all rentals remain consistent with our community's values 
               while providing homeowners with a straightforward way to manage their property's availability 
@@ -70,8 +72,8 @@ const About = () => {
               </a>
             </p>
             
-            <h2>How It Works</h2>
-            <ol>
+            <h2 className="font-bold text-2xl">How It Works</h2>
+            <ul className="ml-8 space-y-2">
               <li>
                 Landlords register on the platform and create listings for their properties.
               </li>
@@ -83,13 +85,13 @@ const About = () => {
               </li>
               <li>
                 When a reservation request is submitted, automatic notifications are sent to:
-                <ul>
+                <ul className="ml-8 mt-2 space-y-1">
                   <li>The potential renter</li>
                   <li>The community rental secretary</li>
                   <li>The landlord (via the rental secretary)</li>
                 </ul>
               </li>
-            </ol>
+            </ul>
             
             <div className="mt-8 flex flex-wrap gap-4">
               <Dialog>

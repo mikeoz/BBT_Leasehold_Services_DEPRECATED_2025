@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,6 +49,7 @@ const Properties = () => {
           )
         `)
         .eq('status', 'active')
+        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 
       if (error) {

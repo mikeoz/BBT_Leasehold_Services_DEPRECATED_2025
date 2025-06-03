@@ -1,3 +1,4 @@
+
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -23,8 +24,8 @@ const About = () => {
           
           <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-8">
             <img 
-              src="https://images.unsplash.com/photo-1472396961693-142e6e269027" 
-              alt="Community landscape" 
+              src="/lovable-uploads/9277e8a2-15e1-4636-81d9-30637fcc0d2e.png" 
+              alt="Bethany Beach Tabernacle building" 
               className="w-full h-full object-cover"
             />
           </div>

@@ -6,93 +6,81 @@ const Rules = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">Community Rules</h1>
+          <h1 className="text-4xl font-bold mb-8">BETHANY BEACH TABERNACLE</h1>
           
           <div className="prose prose-lg max-w-none space-y-6">
+            <h2 className="text-2xl font-bold">GENERAL RULES AND REGULATIONS</h2>
+            
             <p>
-              The following rules and regulations govern the rental of properties within 
-              The Bethany Beach Tabernacle community. All renters and property owners must 
-              adhere to these guidelines to maintain the peaceful and spiritual atmosphere 
-              of our community.
-            </p>
-            
-            <h2 className="text-2xl font-bold">General Community Guidelines</h2>
-            <ul className="ml-8 space-y-2">
-              <li>Respect the quiet and peaceful nature of the community at all times</li>
-              <li>Observe quiet hours from 10:00 PM to 8:00 AM daily</li>
-              <li>Keep music and voices at respectful volumes</li>
-              <li>Maintain cleanliness of common areas and grounds</li>
-              <li>Park only in designated areas</li>
-              <li>Follow all posted speed limits (walking pace)</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Property Rental Guidelines</h2>
-            <ul className="ml-8 space-y-2">
-              <li>All rentals must be arranged through authorized property owners</li>
-              <li>Maximum occupancy limits must be strictly observed</li>
-              <li>No pets allowed unless specifically permitted by property owner</li>
-              <li>Smoking is prohibited in all buildings and on porches</li>
-              <li>Alcohol consumption should be moderate and discreet</li>
-              <li>Check-in and check-out times must be respected</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Prohibited Activities</h2>
-            <ul className="ml-8 space-y-2">
-              <li>Loud parties or gatherings that disturb others</li>
-              <li>Use of fireworks or open flames</li>
-              <li>Unauthorized modifications to properties</li>
-              <li>Commercial activities or solicitation</li>
-              <li>Overnight camping on grounds (except in designated cottages)</li>
-              <li>Swimming or water activities without proper supervision</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Beach and Grounds Usage</h2>
-            <ul className="ml-8 space-y-2">
-              <li>Beach access is a privilege - use responsibly</li>
-              <li>Clean up after yourself and dispose of trash properly</li>
-              <li>No motorized vehicles on the beach</li>
-              <li>Respect posted areas and private property boundaries</li>
-              <li>Children must be supervised at all times near water</li>
-              <li>No glass containers on the beach</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Spiritual Considerations</h2>
-            <ul className="ml-8 space-y-2">
-              <li>Sunday morning worship services have priority - maintain reverent atmosphere</li>
-              <li>Respect the spiritual nature and purpose of the community</li>
-              <li>Dress modestly, especially during worship times</li>
-              <li>Avoid activities that would be considered inappropriate for a religious community</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Emergency Procedures</h2>
-            <ul className="ml-8 space-y-2">
-              <li>In case of emergency, call 911 immediately</li>
-              <li>Report any safety hazards to the community office</li>
-              <li>Know the location of fire extinguishers and emergency exits</li>
-              <li>Severe weather procedures will be posted when applicable</li>
-            </ul>
-            
-            <h2 className="text-2xl font-bold">Consequences for Rule Violations</h2>
-            <p>
-              Violations of community rules may result in:
-            </p>
-            <ul className="ml-8 space-y-2">
-              <li>Verbal or written warnings</li>
-              <li>Immediate termination of rental privileges</li>
-              <li>Removal from the property</li>
-              <li>Loss of future rental privileges</li>
-              <li>Legal action if property damage occurs</li>
-            </ul>
-            
-            <p className="font-bold">
-              By using this rental platform and staying in our community, you agree to abide by all 
-              rules and regulations. These rules are subject to change and updates will be posted 
-              as necessary.
+              The Rules and Regulations of Bethany Beach have been established by the Board of Directors to govern our relationships and preserve the lifestyle we have chosen for this community of Christian believers. They are not intended to be restrictive except as they help us to live in safety and comfort with our neighbors and environment.
             </p>
             
             <p>
-              For questions about these rules or to report violations, please contact the community 
-              management office.
+              This is not an all-inclusive list, and a guiding principle is to love one another and be respectful to neighbors and their property. It is intended that these rules apply to all leaseholders, guests, and renters.
+            </p>
+            
+            <p>
+              The Safety and Security Committee is charged with enforcing rules and regulations.
+            </p>
+            
+            <h3 className="text-xl font-bold">Noise:</h3>
+            <p>
+              Noises disturbing to neighbors should be minimized, especially before 8 a.m. and after 10 p.m. This includes early morning mowing and the operation of other mechanical or construction equipment.
+            </p>
+            
+            <h3 className="text-xl font-bold">Motorized Vehicles:</h3>
+            <ol className="list-decimal ml-8 space-y-2">
+              <li>All drivers of motorized vehicles, including mopeds and golf carts, must have a valid driver's license or moped license.</li>
+              <li>Bethany Beach speed limit is 10 miles per hour for all motorized vehicles, except as posted differently.</li>
+              <li>All motorized vehicles must have proper liability insurance coverage.</li>
+              <li>All Bethany Beach vehicle laws are State of Michigan laws and must be observed accordingly.</li>
+              <li>All Stop signs must be observed with a complete stop.</li>
+              <li>Parking Permits must be displayed at beach parking lot.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Fires and Fireworks:</h3>
+            <ol className="list-decimal ml-8 space-y-2" start={7}>
+              <li>Open fires are not permitted except when properly attended in designated areas and firepits.</li>
+              <li>Use of Michigan legal fireworks is limited to the beach only, and as per Michigan law must be only within the time period of one day before and after a national holiday. Children should be properly supervised.</li>
+              <li>Use of other fireworks, firearms, air rifles, pellet guns, bow and arrow or other such devices is not permitted. Hunting is not permitted unless specifically authorized by the board.</li>
+              <li>Leaf burning is not permitted in Bethany Beach.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Camping:</h3>
+            <ol className="list-decimal ml-8 space-y-2" start={11}>
+              <li>Camping on the beach is not permitted.</li>
+              <li>No mobile homes, campers or portable shelters may be used as living quarters.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Alcohol and illegal drugs:</h3>
+            <ol className="list-decimal ml-8 space-y-2" start={13}>
+              <li>Illegal drugs are not allowed at Bethany Beach.</li>
+              <li>Alcohol is not permitted outside of private residences, and specifically is not permitted on the beach, park, streets, or other common areas.</li>
+              <li>Smoking is not permitted in common areas including the beach.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Pets:</h3>
+            <ol className="list-decimal ml-8 space-y-2" start={16}>
+              <li>Dogs and other pets must be on a leash when outdoors at all times.</li>
+              <li>Dogs are not permitted on the beach except at designated times.</li>
+              <li>Owners must clean up after their pets.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Curfew:</h3>
+            <p>
+              We abide by Chikaming Township regulations which states curfew for those under 17 years old is 11:00 pm, except while participating in a scheduled Youth Activity.
+            </p>
+            
+            <h3 className="text-xl font-bold">Worship and Sunday Activities:</h3>
+            <ol className="list-decimal ml-8 space-y-2" start={19}>
+              <li>The park, tennis courts, and playground are not to be used during the Tabernacle services.</li>
+              <li>Construction work is discouraged on Sundays during the season.</li>
+              <li>Use of motorized lawn equipment is discouraged on Sundays during the season.</li>
+            </ol>
+            
+            <h3 className="text-xl font-bold">Beach Access:</h3>
+            <p>
+              Roads to and from the beach are closed to all except top of the hill residents from 10:30 pm Saturday until 1:00 pm Sunday, and from 10:30 pm until 9:00 am Sunday through Friday, during the season.
             </p>
           </div>
         </div>

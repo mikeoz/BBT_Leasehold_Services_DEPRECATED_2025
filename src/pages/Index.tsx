@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
@@ -124,15 +125,14 @@ const Index = () => {
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <div className="aspect-video bg-muted rounded-md mb-6 overflow-hidden">
                 <img 
-                  src="https://images.unsplash.com/photo-1472396961693-142e6e269027" 
-                  alt="Community landscape" 
+                  src="/lovable-uploads/9277e8a2-15e1-4636-81d9-30637fcc0d2e.png" 
+                  alt="The Bethany Beach Tabernacle building" 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-bold mb-2">Our Beautiful Community</h3>
+              <h3 className="text-xl font-bold mb-2">The Bethany Beach Tabernacle</h3>
               <p className="text-muted-foreground">
-                Our private 200-home community provides a serene environment with exclusive 
-                amenities and a strong sense of community for all residents and their guests.
+                A Christian community providing an opportunity to better live out the command that we love others as we do ourselves.
               </p>
             </div>
           </div>

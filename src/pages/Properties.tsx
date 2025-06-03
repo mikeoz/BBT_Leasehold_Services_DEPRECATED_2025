@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MainLayout from "@/components/layout/MainLayout";
 import PropertyCard from "@/components/PropertyCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SeedDataButton from "@/components/admin/SeedDataButton";
@@ -27,6 +27,7 @@ interface Property {
 
 const Properties = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: properties = [], isLoading, error, refetch } = useQuery({
@@ -59,6 +60,13 @@ const Properties = () => {
       return data as Property[];
     },
   });
+
+  const handleDelete = () => {
+    // Invalidate both properties and user-properties queries
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['user-properties'] });
+    refetch();
+  };
 
   const filteredProperties = properties.filter(property => 
     property.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -132,7 +140,7 @@ const Properties = () => {
                 property={property}
                 currentUserId={user?.id}
                 showEditButton={true}
-                onDelete={refetch}
+                onDelete={handleDelete}
               />
             ))}
           </div>

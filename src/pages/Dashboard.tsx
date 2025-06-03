@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -14,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PropertyCard from "@/components/PropertyCard";
 import RentalRequestActions from "@/components/RentalRequestActions";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PropertyListing {
@@ -56,8 +57,9 @@ interface RentalRequest {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Fetch user's properties
+  // Fetch user's properties (excluding deleted ones)
   const { data: listings = [], isLoading: propertiesLoading } = useQuery({
     queryKey: ['user-properties', user?.id],
     queryFn: async () => {
@@ -85,6 +87,7 @@ const Dashboard = () => {
           )
         `)
         .eq('user_id', user.id)
+        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -135,6 +138,12 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
+  const handleDelete = () => {
+    // Invalidate both properties and user-properties queries
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['user-properties'] });
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
@@ -182,6 +191,7 @@ const Dashboard = () => {
                     showEditButton={true}
                     showManageAvailability={true}
                     showPendingRequests={true}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>

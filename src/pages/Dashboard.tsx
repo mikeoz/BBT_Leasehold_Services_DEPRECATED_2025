@@ -21,6 +21,10 @@ interface PropertyListing {
   id: string;
   title: string;
   description: string;
+  bedrooms: number;
+  bathrooms: number;
+  max_guests: number;
+  user_id: string;
   status: string;
   property_images: Array<{
     image_url: string;
@@ -65,6 +69,10 @@ const Dashboard = () => {
           id,
           title,
           description,
+          bedrooms,
+          bathrooms,
+          max_guests,
+          user_id,
           status,
           property_images (
             image_url,

@@ -9,10 +9,9 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl font-semibold mb-4">CommunityRentals</h3>
+            <h3 className="text-xl font-semibold mb-4">Community Rentals</h3>
             <p className="text-primary-foreground/80 max-w-md">
-              Our platform enables 200 community homeowners to share their properties
-              with friends and family while maintaining community standards.
+              This platform allows Leaseholders to easily share their properties with friends and guests, consistent with the rules and regulations of The Bethany Beach Tabernacle, a private religious organization.
             </p>
           </div>
           
@@ -40,18 +39,14 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-semibold mb-4">Contact</h3>
             <p className="text-primary-foreground/80">
-              Community Management Office<br />
-              123 Community Way<br />
-              Your Location, State 12345<br />
-              <a href="mailto:info@communityrentals.com" className="hover:text-accent transition-colors">
-                info@communityrentals.com
-              </a>
+              Bethany Beach Tabernacle<br />
+              Sawyer, Michigan 49125
             </p>
           </div>
         </div>
         
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm text-primary-foreground/70">
-          <p>© {currentYear} CommunityRentals. All rights reserved.</p>
+          <p>Copyright 2025 BETHANY BEACH TABERNACLE | ALL RIGHTS RESERVED</p>
           <div className="flex justify-center gap-4 mt-4">
             <Link to="/terms" className="hover:text-accent transition-colors">
               Terms of Service

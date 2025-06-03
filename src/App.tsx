@@ -16,6 +16,9 @@ import Dashboard from "./pages/Dashboard";
 import CreateListing from "./pages/CreateListing";
 import EditListing from "./pages/EditListing";
 import ManageAvailability from "./pages/ManageAvailability";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Rules from "./pages/Rules";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/properties/:id" element={<PropertyDetail />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/rules" element={<Rules />} />
             <Route 
               path="/dashboard" 
               element={

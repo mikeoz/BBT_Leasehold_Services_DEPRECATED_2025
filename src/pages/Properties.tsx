@@ -4,14 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MainLayout from "@/components/layout/MainLayout";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import PropertyCard from "@/components/PropertyCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -133,62 +126,14 @@ const Properties = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProperties.map((property) => {
-              // Find cover photo first, then fallback to first image by display order
-              const coverImage = property.property_images?.find(img => img.is_cover);
-              const sortedImages = property.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
-              const primaryImage = coverImage?.image_url || sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
-              
-              // Check if current user owns this property
-              const isOwner = user && property.user_id === user.id;
-              
-              return (
-                <Card key={property.id} className="overflow-hidden card-shadow">
-                  <div className="aspect-video relative">
-                    <img 
-                      src={primaryImage} 
-                      alt={property.title} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <CardHeader>
-                    <CardTitle>{property.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {property.description || "No description available"}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center">
-                        <span className="font-medium">{property.bedrooms}</span>
-                        <span className="ml-1 text-muted-foreground">bed{property.bedrooms !== 1 && 's'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="font-medium">{property.bathrooms}</span>
-                        <span className="ml-1 text-muted-foreground">bath{property.bathrooms !== 1 && 's'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="font-medium">{property.max_guests}</span>
-                        <span className="ml-1 text-muted-foreground">guest{property.max_guests !== 1 && 's'}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter className="flex gap-2">
-                    <Link to={`/properties/${property.id}`} className="flex-1">
-                      <Button className="w-full">View Details</Button>
-                    </Link>
-                    {isOwner && (
-                      <Link to={`/edit-listing/${property.id}`}>
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </Link>
-                    )}
-                  </CardFooter>
-                </Card>
-              );
-            })}
+            {filteredProperties.map((property) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                currentUserId={user?.id}
+                showEditButton={true}
+              />
+            ))}
           </div>
         )}
       </div>

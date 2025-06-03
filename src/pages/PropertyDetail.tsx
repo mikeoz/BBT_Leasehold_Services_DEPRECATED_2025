@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import RentalRequestForm from "@/components/RentalRequestForm";
 import AuthPrompt from "@/components/auth/AuthPrompt";
+import ImageGallery from "@/components/ImageGallery";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,6 @@ const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: property, isLoading, error } = useQuery({
     queryKey: ['property', id],
@@ -69,18 +68,6 @@ const PropertyDetail = () => {
     },
     enabled: !!id,
   });
-
-  const nextImage = () => {
-    if (property?.property_images?.length) {
-      setCurrentImageIndex((prev) => (prev + 1) % property.property_images.length);
-    }
-  };
-
-  const prevImage = () => {
-    if (property?.property_images?.length) {
-      setCurrentImageIndex((prev) => (prev - 1 + property.property_images.length) % property.property_images.length);
-    }
-  };
 
   // Helper function to safely parse amenities and house rules
   const parseListData = (data: string): string[] => {
@@ -134,18 +121,6 @@ const PropertyDetail = () => {
     );
   }
 
-  // Sort images: cover photo first, then by display order
-  const sortedImages = property.property_images?.sort((a, b) => {
-    if (a.is_cover && !b.is_cover) return -1;
-    if (!a.is_cover && b.is_cover) return 1;
-    return a.display_order - b.display_order;
-  }) || [];
-
-  // Use sorted images or fallback to default image
-  const images = sortedImages.length > 0 
-    ? sortedImages.map(img => img.image_url)
-    : ["https://images.unsplash.com/photo-1483058712412-4245e9b90334"];
-
   // Parse amenities and house rules safely
   const amenitiesList = parseListData(property.amenities);
   const rulesList = parseListData(property.house_rules);
@@ -178,64 +153,10 @@ const PropertyDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Property Images and Details */}
           <div>
-            <div className="relative aspect-video bg-muted rounded-md overflow-hidden mb-4">
-              <img 
-                src={images[currentImageIndex]} 
-                alt={`${property.title} - Image ${currentImageIndex + 1}`} 
-                className="w-full h-full object-cover"
-              />
-              
-              {images.length > 1 && (
-                <div className="absolute inset-0 flex items-center justify-between px-4">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="rounded-full bg-white/80 hover:bg-white"
-                    onClick={prevImage}
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="rounded-full bg-white/80 hover:bg-white"
-                    onClick={nextImage}
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Button>
-                </div>
-              )}
-              
-              {images.length > 1 && (
-                <div className="absolute bottom-4 right-4 px-2 py-1 bg-black/70 text-white rounded text-sm">
-                  {currentImageIndex + 1} / {images.length}
-                </div>
-              )}
-            </div>
-            
-            {images.length > 1 && (
-              <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                {images.map((image, index) => (
-                  <div 
-                    key={index} 
-                    className={`w-20 h-20 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${
-                      index === currentImageIndex ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setCurrentImageIndex(index)}
-                  >
-                    <img 
-                      src={image} 
-                      alt={`${property.title} - Thumbnail ${index + 1}`} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <ImageGallery 
+              images={property.property_images || []}
+              title={property.title}
+            />
             
             <div className="space-y-6">
               <div>

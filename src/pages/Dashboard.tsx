@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -12,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PropertyCard from "@/components/PropertyCard";
 import RentalRequestActions from "@/components/RentalRequestActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -166,57 +166,16 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {listings.map((listing) => {
-                  // Find cover photo first, then fallback to first image by display order
-                  const coverImage = listing.property_images?.find(img => img.is_cover);
-                  const sortedImages = listing.property_images?.sort((a, b) => a.display_order - b.display_order) || [];
-                  const primaryImage = coverImage?.image_url || sortedImages[0]?.image_url || "https://images.unsplash.com/photo-1483058712412-4245e9b90334";
-                  const pendingRequests = listing.rental_requests?.filter(req => req.status === 'pending').length || 0;
-                  
-                  return (
-                    <Card key={listing.id} className="overflow-hidden card-shadow">
-                      <div className="aspect-video relative">
-                        <img 
-                          src={primaryImage} 
-                          alt={listing.title} 
-                          className="w-full h-full object-cover"
-                        />
-                        <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full ${
-                          listing.status === "active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
-                        }`}>
-                          {listing.status === "active" ? "Active" : "Inactive"}
-                        </div>
-                      </div>
-                      
-                      <CardHeader>
-                        <CardTitle>{listing.title}</CardTitle>
-                        <CardDescription>{listing.description}</CardDescription>
-                      </CardHeader>
-                      
-                      <CardContent>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">Pending Requests:</span>
-                          {pendingRequests > 0 ? (
-                            <span className="bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full text-xs font-medium">
-                              {pendingRequests}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">None</span>
-                          )}
-                        </div>
-                      </CardContent>
-                      
-                      <CardFooter className="flex justify-between">
-                        <Link to={`/edit-listing/${listing.id}`}>
-                          <Button variant="outline" size="sm">Edit</Button>
-                        </Link>
-                        <Link to={`/manage-availability/${listing.id}`}>
-                          <Button variant="outline" size="sm">Manage Availability</Button>
-                        </Link>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
+                {listings.map((listing) => (
+                  <PropertyCard
+                    key={listing.id}
+                    property={listing}
+                    currentUserId={user?.id}
+                    showEditButton={true}
+                    showManageAvailability={true}
+                    showPendingRequests={true}
+                  />
+                ))}
               </div>
             )}
           </TabsContent>

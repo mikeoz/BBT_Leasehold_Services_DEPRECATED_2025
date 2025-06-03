@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,29 @@ const PropertyDetail = () => {
     enabled: !!id,
   });
 
+  // Helper function to safely parse available dates
+  const parseAvailableDates = (availableDates: any): string[] => {
+    if (!availableDates) return [];
+    
+    // If it's already an array, return it
+    if (Array.isArray(availableDates)) {
+      return availableDates;
+    }
+    
+    // If it's a string, try to parse it as JSON
+    if (typeof availableDates === 'string') {
+      try {
+        const parsed = JSON.parse(availableDates);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error('Error parsing available_dates:', e);
+        return [];
+      }
+    }
+    
+    return [];
+  };
+
   // Helper function to safely parse amenities and house rules
   const parseListData = (data: string): string[] => {
     if (!data) return [];
@@ -123,9 +147,12 @@ const PropertyDetail = () => {
     );
   }
 
-  // Parse amenities and house rules safely
+  // Parse amenities, house rules, and available dates safely
   const amenitiesList = parseListData(property.amenities);
   const rulesList = parseListData(property.house_rules);
+  const availableDatesArray = parseAvailableDates(property.available_dates);
+
+  console.log('Parsed available dates:', availableDatesArray);
 
   return (
     <MainLayout>
@@ -236,7 +263,7 @@ const PropertyDetail = () => {
                 propertyId={property.id} 
                 propertyTitle={property.title}
                 maxGuests={property.max_guests}
-                availableDates={property.available_dates || []}
+                availableDates={availableDatesArray}
               />
             ) : (
               <AuthPrompt 

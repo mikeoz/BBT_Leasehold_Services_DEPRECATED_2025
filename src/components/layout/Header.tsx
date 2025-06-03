@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,13 @@ const Header = () => {
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold text-primary">
-            Community Rentals
+          <Link to="/" className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/c38e8a01-67ff-4f2f-b908-40959e65842c.png" 
+              alt="Bethany Beach Tabernacle Logo" 
+              className="h-10 w-10"
+            />
+            <span className="text-xl font-bold text-primary">Community Rentals</span>
           </Link>
           
           <nav className="hidden md:flex items-center space-x-6">

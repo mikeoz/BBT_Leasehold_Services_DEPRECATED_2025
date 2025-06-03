@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +30,11 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests, availableDate
     message: ""
   });
 
+  // Safely handle availableDates - ensure it's always an array
+  const safeAvailableDates = Array.isArray(availableDates) ? availableDates : [];
+  
   // Convert available dates to Date objects for easier comparison
-  const availableDateObjects = availableDates.map(date => parseISO(date));
+  const availableDateObjects = safeAvailableDates.map(date => parseISO(date));
 
   const isDateAvailable = (date: Date) => {
     return availableDateObjects.some(availableDate => 
@@ -210,11 +212,11 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests, availableDate
                     onSelect={(date) => setFormData(prev => ({ ...prev, checkInDate: date }))}
                     disabled={(date) => {
                       const isPastDate = date < new Date();
-                      const isUnavailable = !isDateAvailable(date);
+                      const isUnavailable = safeAvailableDates.length > 0 && !isDateAvailable(date);
                       return isPastDate || isUnavailable;
                     }}
                     modifiers={{
-                      available: isDateAvailable,
+                      available: safeAvailableDates.length > 0 ? isDateAvailable : () => false,
                     }}
                     modifiersStyles={{
                       available: {
@@ -251,11 +253,11 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests, availableDate
                     disabled={(date) => {
                       const isPastDate = date < new Date();
                       const isBeforeCheckIn = formData.checkInDate && date <= formData.checkInDate;
-                      const isUnavailable = !isDateAvailable(date);
+                      const isUnavailable = safeAvailableDates.length > 0 && !isDateAvailable(date);
                       return isPastDate || isBeforeCheckIn || isUnavailable;
                     }}
                     modifiers={{
-                      available: isDateAvailable,
+                      available: safeAvailableDates.length > 0 ? isDateAvailable : () => false,
                     }}
                     modifiersStyles={{
                       available: {
@@ -298,7 +300,7 @@ const RentalRequestForm = ({ propertyId, propertyTitle, maxGuests, availableDate
             />
           </div>
 
-          {availableDates.length > 0 && (
+          {safeAvailableDates.length > 0 && (
             <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
               <p className="font-medium mb-1">Booking Information:</p>
               <p>• Available dates are highlighted in the calendar</p>

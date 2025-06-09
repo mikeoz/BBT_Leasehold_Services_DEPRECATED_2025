@@ -125,15 +125,45 @@ const CreateListing = () => {
       return;
     }
 
+    console.log("Debug: Starting property creation");
+    console.log("Debug: Current user from auth context:", {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at
+    });
+
     setIsLoading(true);
     
     try {
-      console.log("Creating property with data:", data);
+      // First, verify the user exists in auth.users by checking the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Debug: Session error:", sessionError);
+        throw new Error("Authentication session is invalid. Please log out and log back in.");
+      }
+      
+      if (!sessionData.session?.user) {
+        console.error("Debug: No active session found");
+        throw new Error("No active session found. Please log out and log back in.");
+      }
+      
+      const sessionUserId = sessionData.session.user.id;
+      console.log("Debug: Session user ID:", sessionUserId);
+      console.log("Debug: Auth context user ID:", user.id);
+      
+      if (sessionUserId !== user.id) {
+        console.error("Debug: User ID mismatch between session and auth context");
+        throw new Error("Authentication mismatch detected. Please log out and log back in.");
+      }
+      
+      console.log("Debug: Creating property with verified user ID:", sessionUserId);
+      console.log("Debug: Property data:", data);
       
       const { data: property, error: propertyError } = await supabase
         .from('properties')
         .insert({
-          user_id: user.id,
+          user_id: sessionUserId, // Use the verified session user ID
           title: data.title,
           description: data.description,
           bedrooms: parseInt(data.bedrooms),
@@ -151,11 +181,17 @@ const CreateListing = () => {
         .single();
 
       if (propertyError) {
-        console.error("Error creating property:", propertyError);
+        console.error("Debug: Property creation error:", propertyError);
+        
+        // Provide specific error messages based on the error type
+        if (propertyError.code === '23503' && propertyError.message.includes('properties_user_id_fkey')) {
+          throw new Error("Authentication error: Your user account is not properly registered. Please contact support or try logging out and back in.");
+        }
+        
         throw propertyError;
       }
 
-      console.log("Property created successfully:", property);
+      console.log("Debug: Property created successfully:", property);
 
       if (data.images && data.images.length > 0) {
         console.log("Uploading images, cover photo index:", coverPhotoIndex);
@@ -194,12 +230,36 @@ const CreateListing = () => {
       toast.success("Property listing created successfully!");
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error creating listing:", error);
-      toast.error("Failed to create listing. Please try again.");
+      console.error("Debug: Error creating listing:", error);
+      
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to create listing. Please try again or contact support if the problem persists.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Add a check to ensure user is properly authenticated before showing the form
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="container max-w-3xl mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+            <p className="text-muted-foreground mb-6">
+              You must be logged in to create a property listing.
+            </p>
+            <Button onClick={() => navigate("/auth")}>
+              Go to Login
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -209,6 +269,11 @@ const CreateListing = () => {
           <p className="text-muted-foreground">
             Add details about your property to create a new listing.
           </p>
+          <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Logged in as: {user.email} (ID: {user.id})
+            </p>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2 } from "lucide-react";
+import { Trash2, Clock } from "lucide-react";
 
 interface PropertyImage {
   image_url: string;
@@ -48,6 +48,7 @@ interface PropertyCardProps {
   showManageAvailability?: boolean;
   showPendingRequests?: boolean;
   onDelete?: () => void;
+  onViewRequests?: () => void;
 }
 
 const PropertyCard = ({ 
@@ -56,7 +57,8 @@ const PropertyCard = ({
   showEditButton = false, 
   showManageAvailability = false,
   showPendingRequests = false,
-  onDelete
+  onDelete,
+  onViewRequests
 }: PropertyCardProps) => {
   const { toast } = useToast();
   
@@ -105,6 +107,12 @@ const PropertyCard = ({
     }
   };
 
+  const handleViewRequests = () => {
+    if (onViewRequests) {
+      onViewRequests();
+    }
+  };
+
   return (
     <Card className="overflow-hidden card-shadow">
       <div className="aspect-video relative">
@@ -145,56 +153,70 @@ const PropertyCard = ({
           </div>
         </div>
         
-        {showPendingRequests && (
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-sm">Pending Requests:</span>
-            {pendingRequests > 0 ? (
-              <span className="bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full text-xs font-medium">
-                {pendingRequests}
+        {showPendingRequests && pendingRequests > 0 && (
+          <div className="flex items-center justify-between mt-3 p-2 bg-accent/10 rounded-md">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-accent-foreground" />
+              <span className="text-sm font-medium">
+                {pendingRequests} pending request{pendingRequests !== 1 ? 's' : ''}
               </span>
-            ) : (
-              <span className="text-muted-foreground text-sm">None</span>
-            )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleViewRequests}
+              className="text-xs"
+            >
+              View Requests
+            </Button>
           </div>
         )}
       </CardContent>
       
-      <CardFooter className="flex gap-2">
-        <Link to={`/properties/${property.id}`} className="flex-1">
-          <Button className="w-full">View Details</Button>
-        </Link>
-        {isOwner && showEditButton && (
-          <Link to={`/edit-listing/${property.id}`}>
-            <Button variant="outline" size="sm">Edit</Button>
+      <CardFooter className="flex flex-col gap-2">
+        <div className="flex gap-2 w-full">
+          <Link to={`/properties/${property.id}`} className="flex-1">
+            <Button className="w-full">View Details</Button>
           </Link>
-        )}
-        {isOwner && showManageAvailability && (
-          <Link to={`/manage-availability/${property.id}`}>
-            <Button variant="outline" size="sm">Manage Availability</Button>
-          </Link>
-        )}
-        {isOwner && onDelete && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Property</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{property.title}"? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {isOwner && showEditButton && (
+            <Link to={`/edit-listing/${property.id}`}>
+              <Button variant="outline" size="sm">Edit</Button>
+            </Link>
+          )}
+        </div>
+        
+        {isOwner && (showManageAvailability || onDelete) && (
+          <div className="flex gap-2 w-full">
+            {showManageAvailability && (
+              <Link to={`/manage-availability/${property.id}`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">Manage Availability</Button>
+              </Link>
+            )}
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="flex items-center gap-1">
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         )}
       </CardFooter>
     </Card>

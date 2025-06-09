@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -58,6 +57,7 @@ interface RentalRequest {
 const Dashboard = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("properties");
 
   // Fetch user's properties (excluding deleted ones)
   const { data: listings = [], isLoading: propertiesLoading } = useQuery({
@@ -144,6 +144,10 @@ const Dashboard = () => {
     queryClient.invalidateQueries({ queryKey: ['user-properties'] });
   };
 
+  const handleViewRequests = () => {
+    setActiveTab("requests");
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
@@ -159,7 +163,7 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        <Tabs defaultValue="properties">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="properties">My Properties</TabsTrigger>
             <TabsTrigger value="requests">Rental Requests</TabsTrigger>
@@ -192,6 +196,7 @@ const Dashboard = () => {
                     showManageAvailability={true}
                     showPendingRequests={true}
                     onDelete={handleDelete}
+                    onViewRequests={handleViewRequests}
                   />
                 ))}
               </div>

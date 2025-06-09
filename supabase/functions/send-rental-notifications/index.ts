@@ -24,6 +24,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { type, rental_request_id }: NotificationRequest = await req.json();
 
+    console.log(`Processing notification type: ${type} for request: ${rental_request_id}`);
+
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -37,23 +39,45 @@ const handler = async (req: Request): Promise<Response> => {
         *,
         properties (
           title,
-          user_id,
-          property_owner_profiles (
-            email,
-            full_name
-          )
-        ),
-        renter_profiles (
-          email,
-          full_name
+          user_id
         )
       `)
       .eq('id', rental_request_id)
       .single();
 
     if (error || !rentalRequest) {
+      console.error('Error fetching rental request:', error);
       throw new Error('Rental request not found');
     }
+
+    console.log('Found rental request:', rentalRequest);
+
+    // Get property owner profile
+    const { data: propertyOwner, error: ownerError } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', rentalRequest.properties.user_id)
+      .single();
+
+    if (ownerError) {
+      console.error('Error fetching property owner:', ownerError);
+      throw new Error('Property owner not found');
+    }
+
+    // Get renter profile
+    const { data: renter, error: renterError } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', rentalRequest.renter_id)
+      .single();
+
+    if (renterError) {
+      console.error('Error fetching renter:', renterError);
+      throw new Error('Renter not found');
+    }
+
+    console.log('Property owner:', propertyOwner);
+    console.log('Renter:', renter);
 
     let emailResponse;
 
@@ -62,17 +86,17 @@ const handler = async (req: Request): Promise<Response> => {
         // Send notification to property owner
         emailResponse = await resend.emails.send({
           from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [rentalRequest.properties.property_owner_profiles.email],
+          to: [propertyOwner.email],
           subject: `New Rental Request for ${rentalRequest.properties.title}`,
           html: `
             <h2>New Rental Request</h2>
-            <p>Hello ${rentalRequest.properties.property_owner_profiles.full_name || 'Property Owner'},</p>
+            <p>Hello ${propertyOwner.full_name || 'Property Owner'},</p>
             
             <p>You have received a new rental request for your property: <strong>${rentalRequest.properties.title}</strong></p>
             
             <h3>Request Details:</h3>
             <ul>
-              <li><strong>Guest:</strong> ${rentalRequest.renter_profiles.full_name || rentalRequest.renter_profiles.email}</li>
+              <li><strong>Guest:</strong> ${renter.full_name || renter.email}</li>
               <li><strong>Check-in:</strong> ${new Date(rentalRequest.check_in_date).toLocaleDateString()}</li>
               <li><strong>Check-out:</strong> ${new Date(rentalRequest.check_out_date).toLocaleDateString()}</li>
               <li><strong>Number of Guests:</strong> ${rentalRequest.guests}</li>
@@ -93,11 +117,11 @@ const handler = async (req: Request): Promise<Response> => {
         // Send confirmation to renter
         emailResponse = await resend.emails.send({
           from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [rentalRequest.renter_profiles.email],
+          to: [renter.email],
           subject: `Your Rental Request Has Been Approved!`,
           html: `
             <h2>Rental Request Approved</h2>
-            <p>Hello ${rentalRequest.renter_profiles.full_name || 'Guest'},</p>
+            <p>Hello ${renter.full_name || 'Guest'},</p>
             
             <p>Great news! Your rental request for <strong>${rentalRequest.properties.title}</strong> has been approved.</p>
             
@@ -133,11 +157,11 @@ const handler = async (req: Request): Promise<Response> => {
         // Send rejection notice to renter
         emailResponse = await resend.emails.send({
           from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [rentalRequest.renter_profiles.email],
+          to: [renter.email],
           subject: `Update on Your Rental Request`,
           html: `
             <h2>Rental Request Update</h2>
-            <p>Hello ${rentalRequest.renter_profiles.full_name || 'Guest'},</p>
+            <p>Hello ${renter.full_name || 'Guest'},</p>
             
             <p>Thank you for your interest in <strong>${rentalRequest.properties.title}</strong>. Unfortunately, we're unable to accommodate your request for the dates you selected.</p>
             

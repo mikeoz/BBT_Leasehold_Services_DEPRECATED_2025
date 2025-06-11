@@ -1,9 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.9';
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +12,50 @@ interface NotificationRequest {
   type: 'new_request' | 'approved' | 'rejected';
   rental_request_id: string;
 }
+
+// SMTP configuration using Mailgun
+const sendEmail = async (to: string, subject: string, html: string) => {
+  const smtpConfig = {
+    host: Deno.env.get("MAILGUN_SMTP_HOST"),
+    port: parseInt(Deno.env.get("MAILGUN_SMTP_PORT") || "587"),
+    user: Deno.env.get("MAILGUN_SMTP_USER"),
+    pass: Deno.env.get("MAILGUN_SMTP_PASS"),
+    from: Deno.env.get("MAILGUN_SMTP_USER"), // Using the same email as from address
+  };
+
+  console.log(`Sending email to: ${to}, subject: ${subject}`);
+
+  // Create the email data
+  const emailData = {
+    from: smtpConfig.from,
+    to: to,
+    subject: subject,
+    html: html,
+  };
+
+  // Use Mailgun API instead of SMTP for better reliability
+  const mailgunDomain = smtpConfig.user?.split('@')[1]; // Extract domain from user
+  const apiKey = smtpConfig.pass; // Use the SMTP password as API key
+  
+  const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${btoa(`api:${apiKey}`)}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams(emailData).toString(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Mailgun API error:', errorText);
+    throw new Error(`Failed to send email: ${response.status} ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log('Email sent successfully:', result);
+  return result;
+};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -84,11 +125,10 @@ const handler = async (req: Request): Promise<Response> => {
     switch (type) {
       case 'new_request':
         // Send notification to property owner
-        emailResponse = await resend.emails.send({
-          from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [propertyOwner.email],
-          subject: `New Rental Request for ${rentalRequest.properties.title}`,
-          html: `
+        emailResponse = await sendEmail(
+          propertyOwner.email,
+          `New Rental Request for ${rentalRequest.properties.title}`,
+          `
             <h2>New Rental Request</h2>
             <p>Hello ${propertyOwner.full_name || 'Property Owner'},</p>
             
@@ -109,17 +149,16 @@ const handler = async (req: Request): Promise<Response> => {
             <p><a href="https://xjelhichfibzkopunhpe.supabase.co/dashboard" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Dashboard</a></p>
             
             <p>Best regards,<br>The Bethany Rentals Team</p>
-          `,
-        });
+          `
+        );
         break;
 
       case 'approved':
         // Send confirmation to renter
-        emailResponse = await resend.emails.send({
-          from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [renter.email],
-          subject: `Your Rental Request Has Been Approved!`,
-          html: `
+        emailResponse = await sendEmail(
+          renter.email,
+          `Your Rental Request Has Been Approved!`,
+          `
             <h2>Rental Request Approved</h2>
             <p>Hello ${renter.full_name || 'Guest'},</p>
             
@@ -149,17 +188,16 @@ const handler = async (req: Request): Promise<Response> => {
             <p>We're excited to have you stay with us! If you have any questions, please don't hesitate to reach out.</p>
             
             <p>Best regards,<br>The Bethany Rentals Team</p>
-          `,
-        });
+          `
+        );
         break;
 
       case 'rejected':
         // Send rejection notice to renter
-        emailResponse = await resend.emails.send({
-          from: "Bethany Rentals <onboarding@resend.dev>",
-          to: [renter.email],
-          subject: `Update on Your Rental Request`,
-          html: `
+        emailResponse = await sendEmail(
+          renter.email,
+          `Update on Your Rental Request`,
+          `
             <h2>Rental Request Update</h2>
             <p>Hello ${renter.full_name || 'Guest'},</p>
             
@@ -186,8 +224,8 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Thank you for your understanding, and we hope to host you in the future!</p>
             
             <p>Best regards,<br>The Bethany Rentals Team</p>
-          `,
-        });
+          `
+        );
         break;
     }
 

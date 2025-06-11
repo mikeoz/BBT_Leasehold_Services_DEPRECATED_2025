@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.9';
 
@@ -13,30 +12,27 @@ interface NotificationRequest {
   rental_request_id: string;
 }
 
-// SMTP configuration using Mailgun
+// Email sending using Mailgun API
 const sendEmail = async (to: string, subject: string, html: string) => {
-  const smtpConfig = {
-    host: Deno.env.get("MAILGUN_SMTP_HOST"),
-    port: parseInt(Deno.env.get("MAILGUN_SMTP_PORT") || "587"),
-    user: Deno.env.get("MAILGUN_SMTP_USER"),
-    pass: Deno.env.get("MAILGUN_SMTP_PASS"),
-    from: Deno.env.get("MAILGUN_SMTP_USER"), // Using the same email as from address
-  };
-
   console.log(`Sending email to: ${to}, subject: ${subject}`);
+
+  // Get the Mailgun domain from the SMTP user (extract domain part)
+  const smtpUser = Deno.env.get("MAILGUN_SMTP_USER");
+  const mailgunDomain = smtpUser?.split('@')[1]; // Extract domain from user
+  const apiKey = Deno.env.get("MAILGUN_API_KEY"); // Use the actual API key
+  
+  if (!apiKey || !mailgunDomain) {
+    throw new Error('Missing Mailgun API key or domain configuration');
+  }
 
   // Create the email data
   const emailData = {
-    from: smtpConfig.from,
+    from: smtpUser, // Use the full SMTP user as from address
     to: to,
     subject: subject,
     html: html,
   };
 
-  // Use Mailgun API instead of SMTP for better reliability
-  const mailgunDomain = smtpConfig.user?.split('@')[1]; // Extract domain from user
-  const apiKey = smtpConfig.pass; // Use the SMTP password as API key
-  
   const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
     method: 'POST',
     headers: {
@@ -213,7 +209,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p>This could be due to:</p>
             <ul>
               <li>The dates are no longer available</li>
-              <li>The property is undergoing maintenance</li>
+              <li>Property is undergoing maintenance</li>
               <li>Other scheduling conflicts</li>
             </ul>
             

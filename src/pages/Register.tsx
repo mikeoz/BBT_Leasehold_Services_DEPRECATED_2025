@@ -75,6 +75,7 @@ const Register = () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast.success("Registration successful! Please check your email to verify your account.");
+      form.reset(); // Clear form fields after successful registration
       navigate("/dashboard");
     } catch (error) {
       console.error("Registration error:", error);

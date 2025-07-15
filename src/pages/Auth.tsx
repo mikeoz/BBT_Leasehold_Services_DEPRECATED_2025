@@ -137,6 +137,7 @@ const Auth = () => {
 
       if (authData.user) {
         toast.success("Account created successfully! Please check your email to verify your account.");
+        signupForm.reset(); // Clear form fields after successful registration
         // Note: User will be redirected after email verification
       }
     } catch (error: any) {

@@ -41,7 +41,7 @@ export type Database = {
         }
         Relationships: []
       }
-      properties: {
+      rental_listings: {
         Row: {
           amenities: string | null
           available_dates: Json
@@ -106,7 +106,7 @@ export type Database = {
           },
         ]
       }
-      property_images: {
+      rental_listing_images: {
         Row: {
           created_at: string
           display_order: number | null
@@ -141,7 +141,7 @@ export type Database = {
           },
         ]
       }
-      property_owner_profiles: {
+      rental_owner_profiles: {
         Row: {
           business_name: string | null
           created_at: string

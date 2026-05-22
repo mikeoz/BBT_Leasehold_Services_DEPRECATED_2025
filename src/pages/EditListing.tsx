@@ -116,7 +116,7 @@ const EditListing = () => {
       try {
         console.log("Fetching property with ID:", id);
         const { data: property, error } = await supabase
-          .from('properties')
+          .from('rental_listings')
           .select(`
             *,
             property_images (
@@ -299,7 +299,7 @@ const EditListing = () => {
       
       // Update property details
       const { error: propertyError } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .update({
           title: data.title,
           description: data.description,
@@ -326,7 +326,7 @@ const EditListing = () => {
       if (imagesToDelete.length > 0) {
         console.log("Deleting images:", imagesToDelete);
         const { error: deleteError } = await supabase
-          .from('property_images')
+          .from('rental_listing_images')
           .delete()
           .in('id', imagesToDelete);
         
@@ -351,7 +351,7 @@ const EditListing = () => {
           console.log(`Adding image ${index + 1} to database:`, uploadResult.url);
           
           return supabase
-            .from('property_images')
+            .from('rental_listing_images')
             .insert({
               property_id: id,
               image_url: uploadResult.url,
@@ -377,13 +377,13 @@ const EditListing = () => {
         
         // First, remove cover status from all existing images for this property
         await supabase
-          .from('property_images')
+          .from('rental_listing_images')
           .update({ is_cover: false })
           .eq('property_id', id);
         
         // Then set the selected image as cover
         const { error: coverError } = await supabase
-          .from('property_images')
+          .from('rental_listing_images')
           .update({ is_cover: true })
           .eq('id', coverImageId);
           

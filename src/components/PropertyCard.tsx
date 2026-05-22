@@ -74,7 +74,7 @@ const PropertyCard = ({
   const handleDelete = async () => {
     try {
       const { error } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .update({ status: 'deleted' })
         .eq('id', property.id)
         .eq('user_id', currentUserId); // Extra security check

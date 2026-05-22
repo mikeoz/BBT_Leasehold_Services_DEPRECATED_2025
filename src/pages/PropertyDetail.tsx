@@ -40,7 +40,7 @@ const PropertyDetail = () => {
       if (!id) throw new Error('Property ID is required');
       
       const { data, error } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .select(`
           id,
           title,

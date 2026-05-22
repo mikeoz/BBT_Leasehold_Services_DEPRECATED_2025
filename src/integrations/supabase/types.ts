@@ -136,7 +136,7 @@ export type Database = {
             foreignKeyName: "property_images_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "rental_listings"
             referencedColumns: ["id"]
           },
         ]
@@ -219,7 +219,7 @@ export type Database = {
             foreignKeyName: "rental_requests_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "rental_listings"
             referencedColumns: ["id"]
           },
           {

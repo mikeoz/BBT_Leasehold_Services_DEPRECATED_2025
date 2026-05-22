@@ -66,7 +66,7 @@ const Dashboard = () => {
       if (!user) return [];
       
       const { data, error } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .select(`
           id,
           title,

@@ -33,7 +33,7 @@ const Properties = () => {
     queryKey: ['properties'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .select(`
           id,
           title,

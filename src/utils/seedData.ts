@@ -7,7 +7,7 @@ export const seedProperties = async () => {
 
     // Check if we already have properties to avoid duplicates
     const { data: existingProperties } = await supabase
-      .from('properties')
+      .from('rental_listings')
       .select('id')
       .limit(1);
 
@@ -26,7 +26,7 @@ export const seedProperties = async () => {
 
     // First, create or update the property owner profile for the current user
     const { error: profileError } = await supabase
-      .from('property_owner_profiles')
+      .from('rental_owner_profiles')
       .upsert({
         user_id: user.id,
         full_name: 'Demo Property Owner',
@@ -78,7 +78,7 @@ export const seedProperties = async () => {
     ];
 
     const { data: insertedProperties, error: propertiesError } = await supabase
-      .from('properties')
+      .from('rental_listings')
       .insert(properties)
       .select('id');
 
@@ -135,7 +135,7 @@ export const seedProperties = async () => {
     ];
 
     const { error: imagesError } = await supabase
-      .from('property_images')
+      .from('rental_listing_images')
       .insert(propertyImages);
 
     if (imagesError) {

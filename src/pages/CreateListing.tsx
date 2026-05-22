@@ -161,7 +161,7 @@ const CreateListing = () => {
       console.log("Debug: Property data:", data);
       
       const { data: property, error: propertyError } = await supabase
-        .from('properties')
+        .from('rental_listings')
         .insert({
           user_id: sessionUserId, // Use the verified session user ID
           title: data.title,
@@ -207,7 +207,7 @@ const CreateListing = () => {
           console.log(`Adding image ${index + 1} to database:`, uploadResult.url, "Is cover:", index === coverPhotoIndex);
           
           return supabase
-            .from('property_images')
+            .from('rental_listing_images')
             .insert({
               property_id: property.id,
               image_url: uploadResult.url,

@@ -87,7 +87,6 @@ const Dashboard = () => {
           )
         `)
         .eq('user_id', user.id)
-        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -116,7 +115,7 @@ const Dashboard = () => {
           message,
           status,
           created_at,
-          properties!inner (
+          properties:rental_listings!inner (
             title,
             user_id
           ),
@@ -125,7 +124,7 @@ const Dashboard = () => {
             full_name
           )
         `)
-        .eq('properties.user_id', user.id)
+        .eq('rental_listings.user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {

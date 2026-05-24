@@ -49,7 +49,6 @@ const Properties = () => {
           )
         `)
         .eq('status', 'available')
-        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 
       if (error) {

@@ -119,7 +119,7 @@ const EditListing = () => {
           .from('rental_listings')
           .select(`
             *,
-            rental_listing_images (
+            property_images:rental_listing_images (
               id,
               image_url,
               display_order,

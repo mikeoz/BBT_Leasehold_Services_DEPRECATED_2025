@@ -76,7 +76,7 @@ const Dashboard = () => {
           max_guests,
           user_id,
           status,
-          rental_listing_images (
+          property_images:rental_listing_images (
             image_url,
             display_order,
             is_cover

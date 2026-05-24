@@ -48,7 +48,7 @@ const Properties = () => {
             is_cover
           )
         `)
-        .eq('status', 'active')
+        .eq('status', 'available')
         .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 

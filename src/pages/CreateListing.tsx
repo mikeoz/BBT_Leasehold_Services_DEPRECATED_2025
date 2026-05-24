@@ -175,7 +175,7 @@ const CreateListing = () => {
           pricing_type: data.pricingType,
           rental_rate: parseInt(data.rentalRate),
           available_dates: JSON.stringify(availableDates),
-          status: 'active'
+          status: 'available'
         })
         .select()
         .single();

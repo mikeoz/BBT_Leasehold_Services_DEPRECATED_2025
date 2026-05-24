@@ -59,7 +59,7 @@ const PropertyDetail = () => {
           )
         `)
         .eq('id', id)
-        .eq('status', 'active')
+        .eq('status', 'available')
         .single();
 
       if (error) {

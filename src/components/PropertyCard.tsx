@@ -123,9 +123,9 @@ const PropertyCard = ({
         />
         {property.status && (
           <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full ${
-            property.status === "active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+            property.status === "available" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
           }`}>
-            {property.status === "active" ? "Active" : "Inactive"}
+            {property.status === "available" ? "Available" : "Unavailable"}
           </div>
         )}
       </div>

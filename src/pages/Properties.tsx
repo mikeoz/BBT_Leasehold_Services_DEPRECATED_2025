@@ -42,13 +42,13 @@ const Properties = () => {
           bathrooms,
           max_guests,
           user_id,
-          property_images (
+          property_images:rental_listing_images (
             image_url,
             display_order,
             is_cover
           )
         `)
-        .eq('status', 'active')
+        .eq('status', 'available')
         .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 

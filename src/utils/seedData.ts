@@ -51,7 +51,7 @@ export const seedProperties = async () => {
         user_id: user.id,
         amenities: 'WiFi, Kitchen, Free parking, Air conditioning, Heating, Washer, Dryer, Lake access, Fireplace, Private dock',
         house_rules: 'No smoking, No parties, No pets, Check-in after 3:00 PM, Check-out before 11:00 AM',
-        status: 'active'
+        status: 'available'
       },
       {
         title: 'Mountain View Chalet',
@@ -62,7 +62,7 @@ export const seedProperties = async () => {
         user_id: user.id,
         amenities: 'WiFi, Kitchen, Free parking, Heating, Mountain views, Fireplace, Hiking trails nearby',
         house_rules: 'No smoking, No parties, Check-in after 4:00 PM, Check-out before 10:00 AM',
-        status: 'active'
+        status: 'available'
       },
       {
         title: 'Urban Loft Downtown',
@@ -73,7 +73,7 @@ export const seedProperties = async () => {
         user_id: user.id,
         amenities: 'WiFi, Kitchen, Air conditioning, Heating, Downtown location, Modern appliances',
         house_rules: 'No smoking, No parties, No pets, Check-in after 3:00 PM, Check-out before 11:00 AM',
-        status: 'active'
+        status: 'available'
       }
     ];
 
